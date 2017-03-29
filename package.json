@@ -1,0 +1,38 @@
+{
+  "name": "divisa",
+  "version": "1.0.0",
+  "description": "Distributed cache library",
+  "typings": "src/index.d.ts",
+  "main": "src/index.js",
+  "scripts": {
+    "prepublish": "typings install && npm run build && npm run test",
+    "build": "./node_modules/.bin/tsc",
+    "buildWatch": "./node_modules/.bin/tsc -w",
+    "typings": "./",
+    "test": "./node_modules/.bin/mocha -c -b src/**/*.test.js",
+    "testWatch": "./node_modules/.bin/mocha -c -b -w src/**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slavik57/divisa.git"
+  },
+  "keywords": [
+    "cache",
+    "distributed",
+    "distributed cache"
+  ],
+  "author": "Slava Shpitalny <slavik57@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/slavik57/divisa/issues"
+  },
+  "homepage": "https://github.com/slavik57/divisa#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "mocha": "^3.2.0",
+    "sinon": "^2.1.0",
+    "typescript": "^2.2.2",
+    "typings": "^2.1.0"
+  }
+}
