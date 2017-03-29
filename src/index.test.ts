@@ -16,7 +16,8 @@ describe('first test', () => {
     const mock: SinonStub = stub(obj, 'doStuff', () => console.log('doin other stuff'));
 
     obj.doStuff();
+    obj.doStuff();
 
-    expect(mock.callCount).to.be.equal(1);
+    expect(mock.callCount).to.be.equal(2);
   });
 });
