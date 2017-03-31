@@ -5,10 +5,9 @@
   "typings": "src/index.d.ts",
   "main": "src/index.js",
   "scripts": {
-    "prepublish": "typings install && npm run build && npm run test",
+    "prepublish": "npm run build && npm run test",
     "build": "./node_modules/.bin/tsc",
     "buildWatch": "./node_modules/.bin/tsc -w",
-    "typings": "./",
     "test": "./node_modules/.bin/mocha -c -b src/**/*.test.js",
     "testWatch": "./node_modules/.bin/mocha -c -b -w src/**/*.test.js"
   },
@@ -28,11 +27,13 @@
   },
   "homepage": "https://github.com/slavik57/divisa#readme",
   "devDependencies": {
+    "@types/chai": "^3.4.35",
+    "@types/mocha": "^2.2.40",
+    "@types/sinon": "^2.1.0",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "mocha": "^3.2.0",
     "sinon": "^2.1.0",
-    "typescript": "^2.2.2",
-    "typings": "^2.1.0"
+    "typescript": "^2.2.2"
   }
 }
