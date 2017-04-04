@@ -1,5 +1,2 @@
-export class FirstClass {
-  doStuff() {
-    console.log('doing stuff');
-  }
-}
+export * from './errors/errors';
+export { Cache } from './cache';
