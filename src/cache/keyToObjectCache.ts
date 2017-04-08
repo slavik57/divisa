@@ -1,7 +1,7 @@
-import isNullOrUndefined from "./valueChekers/isNullOrUndefined";
-import { CacheCollisionError } from './errors/errors';
+import isNullOrUndefined from "../valueChekers/isNullOrUndefined";
+import { CacheCollisionError } from '../errors/errors';
 
-export class Cache {
+export class KeyToObjectCache {
   private keyToObjectMap: Map<string, any>;
 
   constructor() {

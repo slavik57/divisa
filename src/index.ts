@@ -1,2 +1,2 @@
 export * from './errors/errors';
-export { Cache } from './cache';
+export { Cache } from './cache/cache';
