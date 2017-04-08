@@ -15,13 +15,13 @@ export class Cache {
     this.keyToObjectMap.set(key, obj);
   }
 
-  public fetch(key: string): any {
+  public fetch(key: string): Promise<any> {
     const obj = this.keyToObjectMap.get(key);
 
     if (isNullOrUndefined(obj)) {
-      return null;
+      return Promise.reject(`The key ${key} does not exit`);
     }
 
-    return obj;
+    return Promise.resolve(obj);
   }
 }
