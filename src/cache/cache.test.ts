@@ -10,7 +10,7 @@ describe('Cache', () => {
   describe('add-fetch', () => {
     it('fetching should reject on empty cache', () => {
       const cache = new Cache();
-      return expect(cache.fetch('not existing key')).to.eventually.be.rejected;
+      return expect(cache.fetch({ key: 'not existing key' })).to.eventually.be.rejected;
     });
 
     it('fetching should return existing object with same key', () => {
@@ -18,25 +18,25 @@ describe('Cache', () => {
       const obj = {};
       const cache = new Cache();
 
-      cache.add(key, obj);
+      cache.add({ key: key }, obj);
 
-      return expect(cache.fetch(key)).to.eventually.be.equal(obj);
+      return expect(cache.fetch({ key: key })).to.eventually.be.equal(obj);
     });
 
     it('fetching should reject on not existing key', () => {
       const cache = new Cache();
 
-      cache.add('some key', {});
+      cache.add({ key: 'some key' }, {});
 
-      return expect(cache.fetch('not existing key')).to.eventually.rejected;
+      return expect(cache.fetch({ key: 'not existing key' })).to.eventually.rejected;
     });
 
     it('adding same key should result in error', () => {
       const cache = new Cache();
       const key = 'some key';
 
-      cache.add(key, {});
-      const addingAction = () => cache.add(key, {});
+      cache.add({ key: key }, {});
+      const addingAction = () => cache.add({ key: key }, {});
 
       expect(addingAction).to.throw(CacheCollisionError)
     });
@@ -48,9 +48,9 @@ describe('Cache', () => {
 
       const cache = new Cache();
 
-      cache.add(key, obj);
+      cache.add({ key: key }, obj);
 
-      return expect(cache.fetch(key, type)).to.eventually.rejected;
+      return expect(cache.fetch({ key: key, type: type })).to.eventually.rejected;
     });
 
     it('register object with key and type, fetch with different type, should reject', () => {
@@ -59,9 +59,9 @@ describe('Cache', () => {
 
       const cache = new Cache();
 
-      cache.add(key, obj, 'some type');
+      cache.add({ key: key, type: 'some type' }, obj);
 
-      return expect(cache.fetch(key, 'some other type')).to.eventually.rejected;
+      return expect(cache.fetch({ key: key, type: 'some other type' })).to.eventually.rejected;
     });
 
     it('register object with key and type, fetch with same type, should resolve with the object', () => {
@@ -71,9 +71,9 @@ describe('Cache', () => {
 
       const cache = new Cache();
 
-      cache.add(key, obj, type);
+      cache.add({ key: key, type: type }, obj);
 
-      return expect(cache.fetch(key, type)).to.eventually.be.equal(obj);
+      return expect(cache.fetch({ key: key, type: type })).to.eventually.be.equal(obj);
     });
 
     it('register same object with same key but different types should not fail', () => {
@@ -82,8 +82,8 @@ describe('Cache', () => {
 
       const cache = new Cache();
 
-      cache.add(key, obj, 'some type');
-      cache.add(key, obj, 'some different type');
+      cache.add({ key: key, type: 'some type' }, obj);
+      cache.add({ key: key, type: 'some different type' }, obj);
     });
 
     it('register same object with same type but different keys should not fail', () => {
@@ -92,8 +92,8 @@ describe('Cache', () => {
 
       const cache = new Cache();
 
-      cache.add('some key', obj, type);
-      cache.add('some different key', obj, type);
+      cache.add({ key: 'some key', type: type }, obj);
+      cache.add({ key: 'some different key', type: type }, obj);
     });
 
     it('register same object with same type and same key should fail', () => {
@@ -103,8 +103,8 @@ describe('Cache', () => {
 
       const cache = new Cache();
 
-      cache.add(key, obj, type);
-      const addAction = () => cache.add(key, obj, type);
+      cache.add({ key: key, type: type }, obj);
+      const addAction = () => cache.add({ key: key, type: type }, obj);
 
       expect(addAction).to.throw(CacheCollisionError);
     });

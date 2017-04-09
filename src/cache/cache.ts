@@ -1,5 +1,6 @@
 import { KeyToObjectCache } from "./keyToObjectCache";
 import { isNullOrUndefined } from "../valueChekers/valueCheckers";
+import { CacheKey } from "./cacheKey";
 
 export class Cache {
   private defaultCache: KeyToObjectCache;
@@ -10,29 +11,29 @@ export class Cache {
     this.typeToCacheMap = new Map<string, KeyToObjectCache>();
   }
 
-  add(key: string, object: any, type?: string): void {
-    if (isNullOrUndefined(type)) {
-      this.defaultCache.add(key, object);
+  add(key: CacheKey, object: any): void {
+    if (isNullOrUndefined(key.type)) {
+      this.defaultCache.add(key.key, object);
       return;
     }
 
     const cache: KeyToObjectCache =
-      this.typeToCacheMap[type] || new KeyToObjectCache();
-    this.typeToCacheMap[type] = cache;
+      this.typeToCacheMap[key.type] || new KeyToObjectCache();
+    this.typeToCacheMap[key.type] = cache;
 
-    cache.add(key, object);
+    cache.add(key.key, object);
   }
 
-  fetch(key: string, type?: string): Promise<any> {
-    if (isNullOrUndefined(type)) {
-      return this.defaultCache.fetch(key);
+  fetch(key: CacheKey): Promise<any> {
+    if (isNullOrUndefined(key.type)) {
+      return this.defaultCache.fetch(key.key);
     }
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap[type];
+    const typeCache: KeyToObjectCache = this.typeToCacheMap[key.type];
     if (!isNullOrUndefined(typeCache)) {
-      return typeCache.fetch(key);
+      return typeCache.fetch(key.key);
     } else {
-      return Promise.reject(`There is no object registered for type [${type}] and key [${key}]`)
+      return Promise.reject(`There is no object registered for key [${key}]`)
     }
   }
 }
