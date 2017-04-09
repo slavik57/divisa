@@ -1,8 +1,8 @@
 import { KeyToObjectCache } from "./keyToObjectCache";
 import { isNullOrUndefined } from "../valueChekers/valueCheckers";
 import { CacheKey } from "./cacheKey";
-import { Resolver } from "../resolvers/resolvers";
-import { CacheCollisionError } from "../index";
+import { Resolver } from "../resolvers/resolver";
+import { CacheCollisionError } from "../errors/errors";
 
 export class Cache {
   private defaultCache: KeyToObjectCache;
@@ -13,11 +13,12 @@ export class Cache {
     this.typeToCacheMap = new Map<string, KeyToObjectCache>();
   }
 
-  add(key: CacheKey, object: any, resolver?: Resolver): void {
+  add(key: CacheKey, object: any, resolver?: Resolver): boolean {
     try {
       this._addToTypeSpecificCache(key, object);
+      return true;
     } catch (e) {
-      this._handleErrorOnAddingToCache(e, key, object, resolver);
+      return this._handleErrorOnAddingToCache(e, key, object, resolver);
     }
   }
 
@@ -31,6 +32,18 @@ export class Cache {
       return typeCache.fetch(key.key);
     } else {
       return Promise.reject(`There is no object registered for key [${key}]`)
+    }
+  }
+
+  remove(key: CacheKey): void {
+    if (isNullOrUndefined(key.type)) {
+      this.defaultCache.remove(key.key);
+      return;
+    }
+
+    const typeCache: KeyToObjectCache = this.typeToCacheMap[key.type];
+    if (!isNullOrUndefined(typeCache)) {
+      typeCache.remove(key.key);
     }
   }
 
@@ -51,9 +64,9 @@ export class Cache {
     error: CacheCollisionError,
     key: CacheKey,
     object: any,
-    resolver: Resolver): void {
+    resolver: Resolver): boolean {
     if (error instanceof CacheCollisionError && !!resolver) {
-      resolver.resolve(this, key, object);
+      return resolver.resolve(this, key, object);
     } else {
       throw error;
     }

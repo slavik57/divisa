@@ -24,4 +24,8 @@ export class KeyToObjectCache {
 
     return Promise.resolve(obj);
   }
+
+  public remove(key: string): void {
+    this.keyToObjectMap.delete(key);
+  }
 }
