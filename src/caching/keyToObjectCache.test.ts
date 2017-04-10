@@ -40,5 +40,32 @@ describe('KeyToObjectCache', () => {
 
       expect(addingAction).to.throw(CacheCollisionError)
     });
+
+    it('removing should not fail on empty cache', () => {
+      const cache = new KeyToObjectCache();
+      cache.remove('not existing key');
+    });
+
+    it('removing should remove existing object with same key', () => {
+      const key = 'some key';
+      const obj = {};
+      const cache = new KeyToObjectCache();
+
+      cache.add(key, obj);
+      cache.remove(key);
+
+      return expect(cache.fetch(key)).to.eventually.rejected;
+    });
+
+    it('removing should not fail on not existing key and not remove the object', () => {
+      const cache = new KeyToObjectCache();
+      const key = 'some key';
+      const obj = {};
+
+      cache.add(key, obj);
+      cache.remove('some other key');
+
+      return expect(cache.fetch(key)).to.eventually.be.equal(obj);
+    });
   });
 });
