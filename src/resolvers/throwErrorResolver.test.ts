@@ -1,4 +1,6 @@
-import { Cache, CacheKey, CacheCollisionError } from '../index';
+import { Cache } from '../caching/cache';
+import { CacheKey } from '../caching/cacheKey';
+import { CacheCollisionError } from '../errors/errors';
 import { ThrowErrorResolver } from "./throwErrorResolver";
 import { spy, SinonSpy } from 'sinon';
 import { expect } from 'chai';

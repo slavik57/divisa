@@ -1,4 +1,10 @@
 export { Resolver } from './resolver';
-export { ThrowErrorResolver } from './throwErrorResolver';
-export { KeepNewResolver } from './keepNewResolver';
-export { KeepOldResolver } from './keepOldResolver';
+import { ThrowErrorResolver } from './throwErrorResolver';
+import { KeepNewResolver } from './keepNewResolver';
+import { KeepOldResolver } from './keepOldResolver';
+
+export class Resolvers {
+  static KeepNewResolver = new KeepNewResolver();
+  static KeepOldResolver = new KeepOldResolver();
+  static ThrowErrorResolver = new ThrowErrorResolver();
+}

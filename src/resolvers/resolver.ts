@@ -1,5 +1,5 @@
-import { Cache } from '../cache/cache';
-import { CacheKey } from "../index";
+import { Cache } from '../caching/cache';
+import { CacheKey } from "../caching/cacheKey";
 
 export interface Resolver {
   resolve(cache: Cache, key: CacheKey, obj: any): boolean;

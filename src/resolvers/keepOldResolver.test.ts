@@ -1,4 +1,5 @@
-import { Cache, CacheKey } from '../index';
+import { Cache } from '../caching/cache';
+import { CacheKey } from '../caching/cacheKey';
 import { KeepOldResolver } from "./keepOldResolver";
 import { spy, SinonSpy } from 'sinon';
 import { expect } from 'chai';

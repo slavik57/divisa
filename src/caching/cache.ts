@@ -3,6 +3,7 @@ import { isNullOrUndefined } from "../valueChekers/valueCheckers";
 import { CacheKey } from "./cacheKey";
 import { Resolver } from "../resolvers/resolver";
 import { CacheCollisionError } from "../errors/errors";
+import { Resolvers } from "../resolvers/resolvers";
 
 export class Cache {
   private defaultCache: KeyToObjectCache;
@@ -13,7 +14,7 @@ export class Cache {
     this.typeToCacheMap = new Map<string, KeyToObjectCache>();
   }
 
-  add(key: CacheKey, object: any, resolver?: Resolver): boolean {
+  add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): boolean {
     try {
       this._addToTypeSpecificCache(key, object);
       return true;

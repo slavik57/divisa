@@ -1,5 +1,7 @@
 import { Resolver } from "./resolver";
-import { Cache, CacheKey, CacheCollisionError } from "../index";
+import { Cache } from "../caching/cache";
+import { CacheKey } from "../caching/cacheKey";
+import { CacheCollisionError } from "../errors/errors";
 
 export class ThrowErrorResolver implements Resolver {
   resolve(cache: Cache, key: CacheKey, obj: any): boolean {
