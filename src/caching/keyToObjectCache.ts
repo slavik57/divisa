@@ -1,5 +1,7 @@
 import isNullOrUndefined from "../valueChekers/isNullOrUndefined";
 import { CacheCollisionError } from '../errors/errors';
+import { CacheInfo } from "./cacheInfo";
+import * as sizeof from "object-sizeof";
 
 export class KeyToObjectCache {
   private keyToObjectMap: Map<string, any>;
@@ -34,7 +36,14 @@ export class KeyToObjectCache {
     return Promise.resolve(Array.from(this.keyToObjectMap.keys()));
   }
 
-  public get size(): Promise<number> {
-    return Promise.resolve(this.keyToObjectMap.size);
+  public async getInfo(): Promise<CacheInfo> {
+    const values: any[] = Array.from(this.keyToObjectMap.values());
+    const sizes = values.map(_ => sizeof(_));
+    const totalSize = sizes.reduce((prev, curr) => prev + curr, 0);
+
+    return {
+      numberOfObjects: this.keyToObjectMap.size,
+      sizeInBytes: totalSize
+    };
   }
 }
