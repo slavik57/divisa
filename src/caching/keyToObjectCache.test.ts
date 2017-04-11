@@ -126,7 +126,7 @@ describe('KeyToObjectCache', () => {
     });
   });
 
-  describe('getInfo', () => {
+  describe('info', () => {
     it('on empty cache should return correct info', async () => {
       const cache = new KeyToObjectCache();
 
@@ -185,5 +185,37 @@ describe('KeyToObjectCache', () => {
 
       expect(info).to.deep.equal(expected);
     })
+  })
+
+  describe('getObjectInfo', () => {
+    it('on empty cache should reject', () => {
+      const cache = new KeyToObjectCache();
+
+      return expect(cache.getObjectInfo('some key')).to.eventually.rejected;
+    });
+
+    it('on not existing key should reject', async () => {
+      const cache = new KeyToObjectCache();
+
+      await cache.add('some key', {});
+
+      return expect(cache.getObjectInfo('some other key')).to.eventually.rejected;
+    });
+
+    it('on existing key should return correct info', async () => {
+      const cache = new KeyToObjectCache();
+      const key = 'some key';
+      const obj = { asdad: 'asda', dhfdf: 213, dyh: null };
+
+      const beforeAdd = new Date();
+      await cache.add(key, obj);
+      const afterAdd = new Date();
+
+      const info = await cache.getObjectInfo(key);
+
+      expect(info.sizeInBytes).to.be.equal(sizeof(obj));
+      expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
+      expect(info.dateAdded.valueOf()).to.be.least(afterAdd.valueOf());
+    });
   })
 });

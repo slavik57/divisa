@@ -2,13 +2,18 @@ import isNullOrUndefined from "../valueChekers/isNullOrUndefined";
 import { CacheCollisionError } from '../errors/errors';
 import { CacheInfo } from "./cacheInfo";
 import * as sizeof from "object-sizeof";
+import { CacheObjectInfo } from "./cacheObjectInfo";
+
+interface CacheObject extends CacheObjectInfo {
+  obj: any;
+}
 
 export class KeyToObjectCache {
-  private keyToObjectMap: Map<string, any>;
+  private keyToObjectMap: Map<string, CacheObject>;
   private totalSizeInBytes: number;
 
   constructor() {
-    this.keyToObjectMap = new Map<string, object>();
+    this.keyToObjectMap = new Map<string, CacheObject>();
     this.totalSizeInBytes = 0;
   }
 
@@ -17,27 +22,33 @@ export class KeyToObjectCache {
       throw new CacheCollisionError(`An object with key [${key}] already exists`);
     }
 
-    this.keyToObjectMap.set(key, obj);
-    this.totalSizeInBytes += sizeof(obj);
+    const cacheObject: CacheObject = {
+      dateAdded: new Date(),
+      obj: obj,
+      sizeInBytes: sizeof(obj)
+    };
+
+    this.keyToObjectMap.set(key, cacheObject);
+    this.totalSizeInBytes += cacheObject.sizeInBytes;
   }
 
   public async fetch(key: string): Promise<any> {
-    const obj = this.keyToObjectMap.get(key);
+    const cacheObject: CacheObject = this.keyToObjectMap.get(key);
 
-    if (isNullOrUndefined(obj)) {
-      throw `The key ${key} does not exit`;
+    if (isNullOrUndefined(cacheObject)) {
+      this._throwKeyDoesNotExistError(key);
     }
 
-    return obj;
+    return cacheObject.obj;
   }
 
   public async remove(key: string): Promise<boolean> {
-    const obj = this.keyToObjectMap.get(key);
-    if (isNullOrUndefined(obj)) {
+    const cacheObject: CacheObject = this.keyToObjectMap.get(key);
+    if (isNullOrUndefined(cacheObject)) {
       return false;
     }
 
-    this.totalSizeInBytes -= sizeof(obj);
+    this.totalSizeInBytes -= cacheObject.sizeInBytes;
     return this.keyToObjectMap.delete(key);
   }
 
@@ -50,5 +61,22 @@ export class KeyToObjectCache {
       numberOfObjects: this.keyToObjectMap.size,
       sizeInBytes: this.totalSizeInBytes
     });
+  }
+
+  public async getObjectInfo(key: string): Promise<CacheObjectInfo> {
+    const cacheObject: CacheObject = this.keyToObjectMap.get(key);
+
+    if (isNullOrUndefined(cacheObject)) {
+      this._throwKeyDoesNotExistError(key);
+    }
+
+    return {
+      dateAdded: cacheObject.dateAdded,
+      sizeInBytes: cacheObject.sizeInBytes
+    }
+  }
+
+  private _throwKeyDoesNotExistError(key: string): void {
+    throw `The key ${key} does not exit`;
   }
 }

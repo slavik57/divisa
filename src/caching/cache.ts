@@ -9,6 +9,7 @@ import { NO_TYPE } from "./noType";
 import { Observable } from "rxjs/Observable";
 import { Subject } from "rxjs/Subject";
 import { CacheInfo } from "./cacheInfo";
+import { CacheObjectInfo } from "./cacheObjectInfo";
 
 export class Cache implements CachePartition {
   private typeToCacheMap: Map<symbol | string, KeyToObjectCache>;
@@ -40,7 +41,7 @@ export class Cache implements CachePartition {
     if (!isNullOrUndefined(typeCache)) {
       return typeCache.fetch(key.key);
     } else {
-      throw `There is no object registered for key [${key}]`;
+      this._throwNoObjectWithKeyError(key);
     }
   }
 
@@ -94,6 +95,17 @@ export class Cache implements CachePartition {
     );
   }
 
+  public async getObjectInfo(key: CacheKey): Promise<CacheObjectInfo> {
+    const type: symbol | string = this._getType(key);
+
+    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
+    if (isNullOrUndefined(typeCache)) {
+      this._throwNoObjectWithKeyError(key);
+    }
+
+    return typeCache.getObjectInfo(key.key);
+  }
+
   public get keyAdded(): Observable<CacheKey> {
     return this.keyAddedObservable;
   }
@@ -130,5 +142,9 @@ export class Cache implements CachePartition {
     } else {
       throw error;
     }
+  }
+
+  private _throwNoObjectWithKeyError(key: CacheKey): void {
+    throw `There is no object registered for key [${key}]`;
   }
 }
