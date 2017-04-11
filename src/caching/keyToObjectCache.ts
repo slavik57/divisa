@@ -28,4 +28,12 @@ export class KeyToObjectCache {
   public remove(key: string): void {
     this.keyToObjectMap.delete(key);
   }
+
+  public get keys(): string[] {
+    return Array.from(this.keyToObjectMap.keys());
+  }
+
+  public get size(): number {
+    return this.keyToObjectMap.size;
+  }
 }

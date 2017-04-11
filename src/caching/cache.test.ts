@@ -7,6 +7,7 @@ import { Cache } from './cache';
 import { CacheCollisionError } from "../index";
 import { Resolver } from "../resolvers/resolvers";
 import { CacheKey } from "./cacheKey";
+import { NO_TYPE } from "./noType";
 
 describe('Cache', () => {
   describe('add-fetch', () => {
@@ -249,5 +250,28 @@ describe('Cache', () => {
 
       return expect(cache.fetch({ key: key, type: type })).to.eventually.rejected;
     });
+  });
+
+  describe('getKeysByTypes', () => {
+    it('should return empty map on empty cache', () => {
+      const cache = new Cache();
+
+      const keysByTypes = cache.getKeysByTypes();
+
+      expect(keysByTypes.size).to.be.equal(0);
+    })
+
+    it('add object without type, should return a map with default type', () => {
+      const cache = new Cache();
+      const key = 'some key';
+      const obj = {};
+
+      cache.add({ key: key }, obj);
+
+      const keysByTypes = cache.getKeysByTypes();
+
+      expect(keysByTypes.size).to.be.equal(1);
+      expect(keysByTypes.get(NO_TYPE)).to.be.deep.equal([key]);
+    })
   });
 });

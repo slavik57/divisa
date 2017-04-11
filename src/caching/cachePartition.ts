@@ -5,4 +5,6 @@ export interface CachePartition {
   add(key: CacheKey, object: any, resolver?: Resolver): boolean;
   fetch(key: CacheKey): Promise<any>;
   remove(key: CacheKey): void;
+
+  getKeysByTypes(): Map<symbol | string, string[]>;
 }

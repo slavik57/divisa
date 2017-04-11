@@ -5,6 +5,7 @@ import { Resolver } from "../resolvers/resolver";
 import { CacheCollisionError } from "../errors/errors";
 import { Resolvers } from "../resolvers/resolvers";
 import { CachePartition } from "./cachePartition";
+import { NO_TYPE } from './noType';
 
 export class Cache implements CachePartition {
   private defaultCache: KeyToObjectCache;
@@ -15,7 +16,7 @@ export class Cache implements CachePartition {
     this.typeToCacheMap = new Map<string, KeyToObjectCache>();
   }
 
-  add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): boolean {
+  public add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): boolean {
     try {
       this._addToTypeSpecificCache(key, object);
       return true;
@@ -24,7 +25,7 @@ export class Cache implements CachePartition {
     }
   }
 
-  fetch(key: CacheKey): Promise<any> {
+  public fetch(key: CacheKey): Promise<any> {
     if (isNullOrUndefined(key.type)) {
       return this.defaultCache.fetch(key.key);
     }
@@ -37,7 +38,7 @@ export class Cache implements CachePartition {
     }
   }
 
-  remove(key: CacheKey): void {
+  public remove(key: CacheKey): void {
     if (isNullOrUndefined(key.type)) {
       this.defaultCache.remove(key.key);
       return;
@@ -47,6 +48,16 @@ export class Cache implements CachePartition {
     if (!isNullOrUndefined(typeCache)) {
       typeCache.remove(key.key);
     }
+  }
+
+  public getKeysByTypes(): Map<symbol | string, string[]> {
+    const result = new Map<symbol | string, string[]>();
+
+    if (this.defaultCache.size > 0) {
+      result.set(NO_TYPE, this.defaultCache.keys);
+    }
+
+    return result;
   }
 
   private _addToTypeSpecificCache(key: CacheKey, object: any): void {

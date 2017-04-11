@@ -68,4 +68,56 @@ describe('KeyToObjectCache', () => {
       return expect(cache.fetch(key)).to.eventually.be.equal(obj);
     });
   });
+
+  describe('keys', () => {
+    it('on empty cache should return empty', () => {
+      const cache = new KeyToObjectCache();
+
+      const keys: string[] = cache.keys;
+
+      expect(keys).to.be.empty;
+    });
+
+    it('on cache with keys should return correct result', () => {
+      const cache = new KeyToObjectCache();
+      const key1 = 'some key';
+      const key2 = 'some other key';
+
+      cache.add(key1, {});
+      cache.add(key2, {});
+
+      const keys: string[] = cache.keys;
+
+      expect(keys).to.be.deep.equal([key1, key2]);
+    });
+  });
+
+  describe('size', () => {
+    it('on empty cache should return 0', () => {
+      const cache = new KeyToObjectCache();
+
+      expect(cache.size).to.be.equal(0);
+    })
+
+    it('on cache with objects should return correct result', () => {
+      const cache = new KeyToObjectCache();
+
+      cache.add('a', {});
+      cache.add('b', {});
+      cache.add('c', {});
+
+      expect(cache.size).to.be.equal(3);
+    })
+
+    it('after removing should return correct result', () => {
+      const cache = new KeyToObjectCache();
+
+      cache.add('a', {});
+      cache.add('b', {});
+      cache.add('c', {});
+      cache.remove('b');
+
+      expect(cache.size).to.be.equal(2);
+    })
+  })
 });
