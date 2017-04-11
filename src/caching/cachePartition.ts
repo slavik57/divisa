@@ -10,4 +10,5 @@ export interface CachePartition {
   getKeysByTypes(): Promise<Map<symbol | string, string[]>>;
 
   readonly keyAdded: Observable<CacheKey>;
+  readonly keyRemoved: Observable<CacheKey>;
 }

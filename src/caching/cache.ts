@@ -12,10 +12,12 @@ import { Subject } from "rxjs/Subject";
 export class Cache implements CachePartition {
   private typeToCacheMap: Map<symbol | string, KeyToObjectCache>;
   private keyAddedObservable: Subject<CacheKey>;
+  private keyRemovedObservable: Subject<CacheKey>;
 
   constructor() {
     this.typeToCacheMap = new Map<symbol | string, KeyToObjectCache>();
     this.keyAddedObservable = new Subject<CacheKey>();
+    this.keyRemovedObservable = new Subject<CacheKey>();
   }
 
   public async add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): Promise<boolean> {
@@ -45,8 +47,12 @@ export class Cache implements CachePartition {
     const type: symbol | string = this._getType(key);
 
     const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
-    if (!isNullOrUndefined(typeCache)) {
-      return typeCache.remove(key.key);
+    if (isNullOrUndefined(typeCache)) {
+      return;
+    }
+
+    if (await typeCache.remove(key.key)) {
+      this.keyRemovedObservable.next(key);
     }
   }
 
@@ -70,6 +76,10 @@ export class Cache implements CachePartition {
 
   public get keyAdded(): Observable<CacheKey> {
     return this.keyAddedObservable;
+  }
+
+  public get keyRemoved(): Observable<CacheKey> {
+    return this.keyRemovedObservable;
   }
 
   private _getType(key: CacheKey): symbol | string {

@@ -420,4 +420,107 @@ describe('Cache', () => {
       expect(spyCallback.callCount).to.be.equal(0);
     });
   });
+
+  describe('keyRemoved', () => {
+
+    it('removing key on empty cache should not raise', async () => {
+      const cache = new Cache();
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyRemoved.subscribe(spyCallback);
+
+      await cache.remove({ key: 'some key' });
+
+      expect(spyCallback.callCount).to.be.equal(0);
+    });
+
+    it('removing not existing key should not raise', async () => {
+      const cache = new Cache();
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyRemoved.subscribe(spyCallback);
+
+      await cache.add({ key: 'some key' }, {});
+
+      await cache.remove({ key: 'some other key' });
+
+      expect(spyCallback.callCount).to.be.equal(0);
+    });
+
+    it('removing existing key should raise', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyRemoved.subscribe(spyCallback);
+
+      await cache.remove(key);
+
+      expect(spyCallback.callCount).to.be.equal(1);
+      expect(spyCallback.args[0]).to.be.length(1);
+      expect(spyCallback.args[0][0]).to.be.equal(key);
+    });
+
+    it('adding with existing key with KeepNewResolver should raise', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyRemoved.subscribe(spyCallback);
+
+      await cache.add(key, {}, Resolvers.KeepNewResolver);
+
+      expect(spyCallback.callCount).to.be.equal(1);
+    });
+
+    it('adding with existing key with KeepNewResolver should first raise keyRemoved and then keyAdded', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const addSpy: SinonSpy = spy();
+      const removeSpy: SinonSpy = spy();
+      cache.keyAdded.subscribe(addSpy);
+      cache.keyRemoved.subscribe(removeSpy);
+
+      await cache.add(key, {}, Resolvers.KeepNewResolver);
+
+      expect(removeSpy.firstCall.calledBefore(addSpy.firstCall)).to.be.true;
+    });
+
+    it('adding with existing key with KeepOldResolver should not raise', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyRemoved.subscribe(spyCallback);
+
+      await cache.add(key, {}, Resolvers.KeepOldResolver);
+
+      expect(spyCallback.callCount).to.be.equal(0);
+    });
+  });
 });
