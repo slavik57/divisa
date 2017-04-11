@@ -6,7 +6,7 @@ import { CacheCollisionError } from "../errors/errors";
 import { Resolvers } from "../resolvers/resolvers";
 import { CachePartition } from "./cachePartition";
 import { NO_TYPE } from "./noType";
-import { Observable } from "rxjs/observable";
+import { Observable } from "rxjs/Observable";
 import { Subject } from "rxjs/Subject";
 
 export class Cache implements CachePartition {
