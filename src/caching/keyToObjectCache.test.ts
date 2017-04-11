@@ -48,6 +48,13 @@ describe('KeyToObjectCache', () => {
       return expect(cache.remove('not existing key')).to.eventually.fulfilled;
     });
 
+    it('removing should return false on empty cache', async () => {
+      const cache = new KeyToObjectCache();
+      const result = await cache.remove('not existing key');
+
+      expect(result).to.be.false;
+    });
+
     it('removing should remove existing object with same key', () => {
       const key = 'some key';
       const obj = {};
@@ -60,6 +67,17 @@ describe('KeyToObjectCache', () => {
       return expect(fetch).to.eventually.rejected;
     });
 
+    it('removing existing object with same key should return true', async () => {
+      const key = 'some key';
+      const obj = {};
+      const cache = new KeyToObjectCache();
+
+      await cache.add(key, obj);
+      const result = await cache.remove(key);
+
+      expect(result).to.be.true;
+    });
+
     it('removing should not fail on not existing key and not remove the object', () => {
       const cache = new KeyToObjectCache();
       const key = 'some key';
@@ -70,6 +88,17 @@ describe('KeyToObjectCache', () => {
         .then(() => cache.fetch(key));
 
       return expect(fetch).to.eventually.be.equal(obj);
+    });
+
+    it('removing not existing key should return false', async () => {
+      const cache = new KeyToObjectCache();
+      const key = 'some key';
+      const obj = {};
+
+      await cache.add(key, obj);
+      const result = await cache.remove('some other key');
+
+      expect(result).to.be.false;
     });
   });
 
