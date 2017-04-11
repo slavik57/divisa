@@ -4,70 +4,88 @@ import { CacheKey } from "./cacheKey";
 import { Resolver } from "../resolvers/resolver";
 import { CacheCollisionError } from "../errors/errors";
 import { Resolvers } from "../resolvers/resolvers";
+import { CachePartition } from "./cachePartition";
+import { NO_TYPE } from './noType';
 
-export class Cache {
-  private defaultCache: KeyToObjectCache;
-  private typeToCacheMap: Map<string, KeyToObjectCache>;
+export class Cache implements CachePartition {
+  private typeToCacheMap: Map<symbol | string, KeyToObjectCache>;
 
   constructor() {
-    this.defaultCache = new KeyToObjectCache();
-    this.typeToCacheMap = new Map<string, KeyToObjectCache>();
+    this.typeToCacheMap = new Map<symbol | string, KeyToObjectCache>();
   }
 
-  add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): boolean {
+  public async add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): Promise<boolean> {
     try {
-      this._addToTypeSpecificCache(key, object);
-      return true;
+      return await this._addToTypeSpecificCache(key, object);
     } catch (e) {
       return this._handleErrorOnAddingToCache(e, key, object, resolver);
     }
   }
 
-  fetch(key: CacheKey): Promise<any> {
-    if (isNullOrUndefined(key.type)) {
-      return this.defaultCache.fetch(key.key);
-    }
+  public async fetch(key: CacheKey): Promise<any> {
+    const type: symbol | string = this._getType(key);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap[key.type];
+    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
       return typeCache.fetch(key.key);
     } else {
-      return Promise.reject(`There is no object registered for key [${key}]`)
+      throw `There is no object registered for key [${key}]`;
     }
   }
 
-  remove(key: CacheKey): void {
-    if (isNullOrUndefined(key.type)) {
-      this.defaultCache.remove(key.key);
-      return;
-    }
+  public async remove(key: CacheKey): Promise<void> {
+    const type: symbol | string = this._getType(key);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap[key.type];
+    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
-      typeCache.remove(key.key);
+      return typeCache.remove(key.key);
     }
   }
 
-  private _addToTypeSpecificCache(key: CacheKey, object: any): void {
-    if (isNullOrUndefined(key.type)) {
-      this.defaultCache.add(key.key, object);
-      return;
+  public async getKeysByTypes(): Promise<Map<symbol | string, string[]>> {
+    const result = new Map<symbol | string, string[]>();
+
+    for (let tuple of this.typeToCacheMap.entries()) {
+      const type: symbol | string = tuple[0];
+      const keyToObjectCache: KeyToObjectCache = tuple[1];
+
+      const keysOfType: string[] = result.get(type) || [];
+      result.set(type, keysOfType);
+
+      const keys: string[] = await keyToObjectCache.keys;
+
+      keysOfType.push.apply(keysOfType, keys);
     }
+
+    return result;
+  }
+
+  private _getType(key: CacheKey): symbol | string {
+    if (isNullOrUndefined(key.type)) {
+      return NO_TYPE;
+    }
+
+    return key.type;
+  }
+
+  private async _addToTypeSpecificCache(key: CacheKey, object: any): Promise<boolean> {
+    const type: symbol | string = this._getType(key);
 
     const cache: KeyToObjectCache =
-      this.typeToCacheMap[key.type] || new KeyToObjectCache();
-    this.typeToCacheMap[key.type] = cache;
+      this.typeToCacheMap.get(type) || new KeyToObjectCache();
+    this.typeToCacheMap.set(type, cache);
 
-    cache.add(key.key, object);
+    await cache.add(key.key, object);
+    return true;
   }
 
-  private _handleErrorOnAddingToCache(
+  private async _handleErrorOnAddingToCache(
     error: CacheCollisionError,
     key: CacheKey,
     object: any,
-    resolver: Resolver): boolean {
+    resolver: Resolver): Promise<boolean> {
     if (error instanceof CacheCollisionError && !!resolver) {
-      return resolver.resolve(this, key, object);
+      return await resolver.resolve(this, key, object);
     } else {
       throw error;
     }

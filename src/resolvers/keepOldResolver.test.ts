@@ -14,9 +14,9 @@ describe('KeepOldResolver', () => {
 
     const resolver = new KeepOldResolver();
 
-    resolver.resolve(cache, key, obj);
-
-    expect(addSpy.callCount).to.be.equal(0);
+    return resolver.resolve(cache, key, obj).then(() => {
+      expect(addSpy.callCount).to.be.equal(0)
+    });
   });
 
   it('should not remove the old object', () => {
@@ -28,9 +28,9 @@ describe('KeepOldResolver', () => {
 
     const resolver = new KeepOldResolver();
 
-    resolver.resolve(cache, key, obj);
-
-    expect(removeSpy.callCount).to.be.equal(0);
+    return resolver.resolve(cache, key, obj).then(() => {
+      expect(removeSpy.callCount).to.be.equal(0);
+    });
   });
 
   it('should reeturn false', () => {
@@ -41,8 +41,8 @@ describe('KeepOldResolver', () => {
 
     const resolver = new KeepOldResolver();
 
-    const result: boolean = resolver.resolve(cache, key, obj);
+    const result = resolver.resolve(cache, key, obj);
 
-    expect(result).to.be.false;
+    expect(result).to.eventually.be.false;
   });
 });

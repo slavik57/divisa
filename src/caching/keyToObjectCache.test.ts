@@ -18,32 +18,34 @@ describe('KeyToObjectCache', () => {
       const obj = {};
       const cache = new KeyToObjectCache();
 
-      cache.add(key, obj);
+      const onAdded = cache.add(key, obj);
+      const fetch = onAdded.then(() => cache.fetch(key));
 
-      return expect(cache.fetch(key)).to.eventually.be.equal(obj);
+      return expect(fetch).to.eventually.be.equal(obj);
     });
 
     it('fetching should reject on not existing key', () => {
       const cache = new KeyToObjectCache();
 
-      cache.add('some key', {});
+      const onAdded = cache.add('some key', {});
+      const fetch = onAdded.then(() => cache.fetch('not existing key'));
 
-      return expect(cache.fetch('not existing key')).to.eventually.rejected;
+      return expect(fetch).to.eventually.rejected;
     });
 
     it('adding same key should result in error', () => {
       const cache = new KeyToObjectCache();
       const key = 'some key';
 
-      cache.add(key, {});
-      const addingAction = () => cache.add(key, {});
+      const add = cache.add(key, {})
+        .then(() => cache.add(key, {}));
 
-      expect(addingAction).to.throw(CacheCollisionError)
+      return expect(add).to.eventually.rejectedWith(CacheCollisionError)
     });
 
     it('removing should not fail on empty cache', () => {
       const cache = new KeyToObjectCache();
-      cache.remove('not existing key');
+      return expect(cache.remove('not existing key')).to.eventually.fulfilled;
     });
 
     it('removing should remove existing object with same key', () => {
@@ -51,10 +53,11 @@ describe('KeyToObjectCache', () => {
       const obj = {};
       const cache = new KeyToObjectCache();
 
-      cache.add(key, obj);
-      cache.remove(key);
+      const fetch = cache.add(key, obj)
+        .then(() => cache.remove(key))
+        .then(() => cache.fetch(key));
 
-      return expect(cache.fetch(key)).to.eventually.rejected;
+      return expect(fetch).to.eventually.rejected;
     });
 
     it('removing should not fail on not existing key and not remove the object', () => {
@@ -62,10 +65,64 @@ describe('KeyToObjectCache', () => {
       const key = 'some key';
       const obj = {};
 
-      cache.add(key, obj);
-      cache.remove('some other key');
+      const fetch = cache.add(key, obj)
+        .then(() => cache.remove('some other key'))
+        .then(() => cache.fetch(key));
 
-      return expect(cache.fetch(key)).to.eventually.be.equal(obj);
+      return expect(fetch).to.eventually.be.equal(obj);
     });
   });
+
+  describe('keys', () => {
+    it('on empty cache should return empty', async () => {
+      const cache = new KeyToObjectCache();
+
+      const keys: string[] = await cache.keys;
+
+      expect(keys).to.be.empty;
+    });
+
+    it('on cache with keys should return correct result', () => {
+      const cache = new KeyToObjectCache();
+      const key1 = 'some key';
+      const key2 = 'some other key';
+
+      const keys = cache.add(key1, {})
+        .then(() => cache.add(key2, {}))
+        .then(() => cache.keys);
+
+      return expect(keys).to.eventually.deep.equal([key1, key2]);
+    });
+  });
+
+  describe('size', () => {
+    it('on empty cache should return 0', () => {
+      const cache = new KeyToObjectCache();
+
+      return expect(cache.size).to.eventually.be.equal(0);
+    })
+
+    it('on cache with objects should return correct result', () => {
+      const cache = new KeyToObjectCache();
+
+      const size = cache.add('a', {})
+        .then(() => cache.add('b', {}))
+        .then(() => cache.add('c', {}))
+        .then(() => cache.size);
+
+      return expect(size).to.eventually.be.equal(3);
+    })
+
+    it('after removing should return correct result', () => {
+      const cache = new KeyToObjectCache();
+
+      const size = cache.add('a', {})
+        .then(() => cache.add('b', {}))
+        .then(() => cache.add('c', {}))
+        .then(() => cache.remove('b'))
+        .then(() => cache.size);
+
+      return expect(size).to.eventually.be.equal(2);
+    })
+  })
 });

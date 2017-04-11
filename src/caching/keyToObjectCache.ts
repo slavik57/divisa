@@ -8,24 +8,33 @@ export class KeyToObjectCache {
     this.keyToObjectMap = new Map<string, object>();
   }
 
-  public add(key: string, obj: any) {
+  public async add(key: string, obj: any): Promise<void> {
     if (this.keyToObjectMap.has(key)) {
       throw new CacheCollisionError(`An object with key [${key}] already exists`);
     }
+
     this.keyToObjectMap.set(key, obj);
   }
 
-  public fetch(key: string): Promise<any> {
+  public async fetch(key: string): Promise<any> {
     const obj = this.keyToObjectMap.get(key);
 
     if (isNullOrUndefined(obj)) {
-      return Promise.reject(`The key ${key} does not exit`);
+      throw `The key ${key} does not exit`;
     }
 
-    return Promise.resolve(obj);
+    return obj;
   }
 
-  public remove(key: string): void {
+  public async remove(key: string): Promise<void> {
     this.keyToObjectMap.delete(key);
+  }
+
+  public get keys(): Promise<string[]> {
+    return Promise.resolve(Array.from(this.keyToObjectMap.keys()));
+  }
+
+  public get size(): Promise<number> {
+    return Promise.resolve(this.keyToObjectMap.size);
   }
 }
