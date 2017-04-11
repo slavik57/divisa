@@ -130,7 +130,7 @@ describe('KeyToObjectCache', () => {
     it('on empty cache should return correct info', async () => {
       const cache = new KeyToObjectCache();
 
-      const info = await cache.getInfo();
+      const info = await cache.info;
 
       const expected: CacheInfo = {
         numberOfObjects: 0,
@@ -157,7 +157,7 @@ describe('KeyToObjectCache', () => {
         sizeInBytes: totalSize
       };
 
-      const info = await cache.getInfo();
+      const info = await cache.info;
 
       expect(info).to.deep.equal(expected);
     })
@@ -181,7 +181,7 @@ describe('KeyToObjectCache', () => {
         sizeInBytes: totalSize
       };
 
-      const info = await cache.getInfo();
+      const info = await cache.info;
 
       expect(info).to.deep.equal(expected);
     })

@@ -80,7 +80,7 @@ export class Cache implements CachePartition {
       Array.from(this.typeToCacheMap.values());
 
     const infos: CacheInfo[] =
-      await Promise.all(caches.map(_ => _.getInfo()));
+      await Promise.all(caches.map(_ => _.info));
 
     return infos.reduce((prev: CacheInfo, curr: CacheInfo) =>
       ({

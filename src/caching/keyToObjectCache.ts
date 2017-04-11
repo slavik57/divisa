@@ -5,9 +5,11 @@ import * as sizeof from "object-sizeof";
 
 export class KeyToObjectCache {
   private keyToObjectMap: Map<string, any>;
+  private totalSizeInBytes: number;
 
   constructor() {
     this.keyToObjectMap = new Map<string, object>();
+    this.totalSizeInBytes = 0;
   }
 
   public async add(key: string, obj: any): Promise<void> {
@@ -16,6 +18,7 @@ export class KeyToObjectCache {
     }
 
     this.keyToObjectMap.set(key, obj);
+    this.totalSizeInBytes += sizeof(obj);
   }
 
   public async fetch(key: string): Promise<any> {
@@ -29,6 +32,12 @@ export class KeyToObjectCache {
   }
 
   public async remove(key: string): Promise<boolean> {
+    const obj = this.keyToObjectMap.get(key);
+    if (isNullOrUndefined(obj)) {
+      return false;
+    }
+
+    this.totalSizeInBytes -= sizeof(obj);
     return this.keyToObjectMap.delete(key);
   }
 
@@ -36,14 +45,10 @@ export class KeyToObjectCache {
     return Promise.resolve(Array.from(this.keyToObjectMap.keys()));
   }
 
-  public async getInfo(): Promise<CacheInfo> {
-    const values: any[] = Array.from(this.keyToObjectMap.values());
-    const sizes = values.map(_ => sizeof(_));
-    const totalSize = sizes.reduce((prev, curr) => prev + curr, 0);
-
-    return {
+  public get info(): Promise<CacheInfo> {
+    return Promise.resolve(<CacheInfo>{
       numberOfObjects: this.keyToObjectMap.size,
-      sizeInBytes: totalSize
-    };
+      sizeInBytes: this.totalSizeInBytes
+    });
   }
 }
