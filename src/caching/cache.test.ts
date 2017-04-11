@@ -26,15 +26,14 @@ describe('Cache', () => {
       return expect(add).to.eventually.be.true;
     });
 
-    it('fetching should return existing object with same key', () => {
+    it('fetching should return existing object with same key', async () => {
       const key = 'some key';
       const obj = {};
       const cache = new Cache();
 
-      const fetch = cache.add({ key: key }, obj)
-        .then(() => cache.fetch({ key: key }));
+      await cache.add({ key: key }, obj);
 
-      return expect(fetch).to.eventually.be.equal(obj);
+      return expect(cache.fetch({ key: key })).to.eventually.be.equal(obj);
     });
 
     it('fetching should reject on not existing key', () => {

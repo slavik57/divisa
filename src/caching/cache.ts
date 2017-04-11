@@ -14,19 +14,22 @@ export class Cache implements CachePartition {
     this.typeToCacheMap = new Map<symbol | string, KeyToObjectCache>();
   }
 
-  public add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): Promise<boolean> {
-    return this._addToTypeSpecificCache(key, object)
-      .catch(e => this._handleErrorOnAddingToCache(e, key, object, resolver));
+  public async add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): Promise<boolean> {
+    try {
+      return await this._addToTypeSpecificCache(key, object);
+    } catch (e) {
+      return this._handleErrorOnAddingToCache(e, key, object, resolver);
+    }
   }
 
-  public fetch(key: CacheKey): Promise<any> {
+  public async fetch(key: CacheKey): Promise<any> {
     const type: symbol | string = this._getType(key);
 
     const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
       return typeCache.fetch(key.key);
     } else {
-      return Promise.reject(`There is no object registered for key [${key}]`)
+      throw `There is no object registered for key [${key}]`;
     }
   }
 
@@ -63,25 +66,26 @@ export class Cache implements CachePartition {
     return key.type;
   }
 
-  private _addToTypeSpecificCache(key: CacheKey, object: any): Promise<boolean> {
+  private async _addToTypeSpecificCache(key: CacheKey, object: any): Promise<boolean> {
     const type: symbol | string = this._getType(key);
 
     const cache: KeyToObjectCache =
       this.typeToCacheMap.get(type) || new KeyToObjectCache();
     this.typeToCacheMap.set(type, cache);
 
-    return cache.add(key.key, object).then(() => true);
+    await cache.add(key.key, object);
+    return true;
   }
 
-  private _handleErrorOnAddingToCache(
+  private async _handleErrorOnAddingToCache(
     error: CacheCollisionError,
     key: CacheKey,
     object: any,
     resolver: Resolver): Promise<boolean> {
     if (error instanceof CacheCollisionError && !!resolver) {
-      return resolver.resolve(this, key, object);
+      return await resolver.resolve(this, key, object);
     } else {
-      return Promise.reject(error);
+      throw error;
     }
   }
 }
