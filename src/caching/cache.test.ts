@@ -273,5 +273,41 @@ describe('Cache', () => {
       expect(keysByTypes.size).to.be.equal(1);
       expect(keysByTypes.get(NO_TYPE)).to.be.deep.equal([key]);
     })
+
+    it('add object with type, should return a map with type', () => {
+      const cache = new Cache();
+      const key = 'some key';
+      const type = 'some type';
+      const obj = {};
+
+      cache.add({ key: key, type: type }, obj);
+
+      const keysByTypes = cache.getKeysByTypes();
+
+      expect(keysByTypes.size).to.be.equal(1);
+      expect(keysByTypes.get(type)).to.be.deep.equal([key]);
+    })
+
+    it('add objects with and without types, should return a map with type', () => {
+      const cache = new Cache();
+      const key1 = 'some key1';
+      const key2 = 'some key2';
+      const key3 = 'some key3';
+      const key4 = 'some key4';
+      const type1 = 'some type1';
+      const type2 = 'some type2';
+
+      cache.add({ key: key1 }, {});
+      cache.add({ key: key2, type: type1 }, {});
+      cache.add({ key: key3, type: type2 }, {});
+      cache.add({ key: key4, type: type2 }, {});
+
+      const keysByTypes = cache.getKeysByTypes();
+
+      expect(keysByTypes.size).to.be.equal(3);
+      expect(keysByTypes.get(NO_TYPE)).to.be.deep.equal([key1]);
+      expect(keysByTypes.get(type1)).to.be.deep.equal([key2]);
+      expect(keysByTypes.get(type2)).to.be.deep.equal([key3, key4]);
+    })
   });
 });

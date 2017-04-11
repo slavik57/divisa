@@ -8,12 +8,10 @@ import { CachePartition } from "./cachePartition";
 import { NO_TYPE } from './noType';
 
 export class Cache implements CachePartition {
-  private defaultCache: KeyToObjectCache;
-  private typeToCacheMap: Map<string, KeyToObjectCache>;
+  private typeToCacheMap: Map<symbol | string, KeyToObjectCache>;
 
   constructor() {
-    this.defaultCache = new KeyToObjectCache();
-    this.typeToCacheMap = new Map<string, KeyToObjectCache>();
+    this.typeToCacheMap = new Map<symbol | string, KeyToObjectCache>();
   }
 
   public add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): boolean {
@@ -26,11 +24,9 @@ export class Cache implements CachePartition {
   }
 
   public fetch(key: CacheKey): Promise<any> {
-    if (isNullOrUndefined(key.type)) {
-      return this.defaultCache.fetch(key.key);
-    }
+    const type: symbol | string = this._getType(key);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap[key.type];
+    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
       return typeCache.fetch(key.key);
     } else {
@@ -39,12 +35,9 @@ export class Cache implements CachePartition {
   }
 
   public remove(key: CacheKey): void {
-    if (isNullOrUndefined(key.type)) {
-      this.defaultCache.remove(key.key);
-      return;
-    }
+    const type: symbol | string = this._getType(key);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap[key.type];
+    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
       typeCache.remove(key.key);
     }
@@ -53,22 +46,33 @@ export class Cache implements CachePartition {
   public getKeysByTypes(): Map<symbol | string, string[]> {
     const result = new Map<symbol | string, string[]>();
 
-    if (this.defaultCache.size > 0) {
-      result.set(NO_TYPE, this.defaultCache.keys);
+    for (let tuple of this.typeToCacheMap.entries()) {
+      const type: symbol | string = tuple[0];
+      const keyToObjectCache: KeyToObjectCache = tuple[1];
+
+      const keysOfType: string[] = result.get(type) || [];
+      result.set(type, keysOfType);
+
+      keysOfType.push.apply(keysOfType, keyToObjectCache.keys);
     }
 
     return result;
   }
 
-  private _addToTypeSpecificCache(key: CacheKey, object: any): void {
+  private _getType(key: CacheKey): symbol | string {
     if (isNullOrUndefined(key.type)) {
-      this.defaultCache.add(key.key, object);
-      return;
+      return NO_TYPE;
     }
 
+    return key.type;
+  }
+
+  private _addToTypeSpecificCache(key: CacheKey, object: any): void {
+    const type: symbol | string = this._getType(key);
+
     const cache: KeyToObjectCache =
-      this.typeToCacheMap[key.type] || new KeyToObjectCache();
-    this.typeToCacheMap[key.type] = cache;
+      this.typeToCacheMap.get(type) || new KeyToObjectCache();
+    this.typeToCacheMap.set(type, cache);
 
     cache.add(key.key, object);
   }
