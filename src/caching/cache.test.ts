@@ -6,6 +6,7 @@ chai.use(chaiAsPromised);
 import { Cache } from './cache';
 import { CacheCollisionError } from "../index";
 import { Resolver } from "../resolvers/resolvers";
+import { Resolvers } from "../resolvers/resolvers";
 import { CacheKey } from "./cacheKey";
 import { NO_TYPE } from "./noType";
 
@@ -341,5 +342,82 @@ describe('Cache', () => {
         expect(keysByTypes.get(type2)).to.be.deep.equal([key3, key4]);
       });
     })
+  });
+
+  describe('keyAdded', () => {
+    it('adding key should raise', () => {
+      const cache = new Cache();
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyAdded.subscribe(spyCallback);
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      return cache.add(key, {}).then(() => {
+        expect(spyCallback.callCount).to.be.equal(1);
+        expect(spyCallback.args[0]).to.be.length(1);
+        expect(spyCallback.args[0][0]).to.be.equal(key);
+      });
+    });
+
+    it('adding with existing key should not raise', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyAdded.subscribe(spyCallback);
+
+      try {
+        await cache.add(key, {});
+      } catch (e) {
+      }
+
+      expect(spyCallback.callCount).to.be.equal(0);
+    });
+
+    it('adding with existing key with KeepNewResolver should raise', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyAdded.subscribe(spyCallback);
+
+      await cache.add(key, {}, Resolvers.KeepNewResolver);
+
+      expect(spyCallback.callCount).to.be.equal(1);
+    });
+
+    it('adding with existing key with KeepOldResolver should not raise', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = {
+        key: 'some key',
+        type: 'some type'
+      };
+
+      await cache.add(key, {});
+
+      const spyCallback: SinonSpy = spy();
+      cache.keyAdded.subscribe(spyCallback);
+
+      await cache.add(key, {}, Resolvers.KeepOldResolver);
+
+      expect(spyCallback.callCount).to.be.equal(0);
+    });
   });
 });
