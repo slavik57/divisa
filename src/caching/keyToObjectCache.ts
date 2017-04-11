@@ -8,11 +8,12 @@ export class KeyToObjectCache {
     this.keyToObjectMap = new Map<string, object>();
   }
 
-  public add(key: string, obj: any) {
+  public add(key: string, obj: any): Promise<void> {
     if (this.keyToObjectMap.has(key)) {
-      throw new CacheCollisionError(`An object with key [${key}] already exists`);
+      return Promise.reject(new CacheCollisionError(`An object with key [${key}] already exists`));
     }
     this.keyToObjectMap.set(key, obj);
+    return Promise.resolve();
   }
 
   public fetch(key: string): Promise<any> {

@@ -15,12 +15,9 @@ describe('ThrowErrorResolver', () => {
 
     const resolver = new ThrowErrorResolver();
 
-    try {
-      resolver.resolve(cache, key, obj);
-    } catch (e) {
-    }
-
-    expect(addSpy.callCount).to.be.equal(0);
+    return resolver.resolve(cache, key, obj).catch(() => {
+      expect(addSpy.callCount).to.be.equal(0);
+    });
   });
 
   it('should not remove the old object', () => {
@@ -32,12 +29,9 @@ describe('ThrowErrorResolver', () => {
 
     const resolver = new ThrowErrorResolver();
 
-    try {
-      resolver.resolve(cache, key, obj);
-    } catch (e) {
-    }
-
-    expect(removeSpy.callCount).to.be.equal(0);
+    return resolver.resolve(cache, key, obj).catch(() => {
+      expect(removeSpy.callCount).to.be.equal(0);
+    });
   });
 
   it('should throw error', () => {
@@ -48,8 +42,8 @@ describe('ThrowErrorResolver', () => {
 
     const resolver = new ThrowErrorResolver();
 
-    const resolveAction = () => resolver.resolve(cache, key, obj);
+    const result = resolver.resolve(cache, key, obj);
 
-    expect(resolveAction).to.throw(CacheCollisionError)
+    expect(result).to.eventually.rejectedWith(CacheCollisionError);
   });
 });

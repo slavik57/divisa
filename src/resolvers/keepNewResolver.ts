@@ -3,9 +3,9 @@ import { Cache } from "../caching/cache";
 import { CacheKey } from "../caching/cacheKey";
 
 export class KeepNewResolver implements Resolver {
-  resolve(cache: Cache, key: CacheKey, obj: any): boolean {
+  resolve(cache: Cache, key: CacheKey, obj: any): Promise<boolean> {
     cache.remove(key);
-    cache.add(key, obj);
-    return true;
+    return cache.add(key, obj)
+      .then(() => true);
   }
 }

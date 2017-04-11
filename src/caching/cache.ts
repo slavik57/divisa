@@ -14,13 +14,9 @@ export class Cache implements CachePartition {
     this.typeToCacheMap = new Map<symbol | string, KeyToObjectCache>();
   }
 
-  public add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): boolean {
-    try {
-      this._addToTypeSpecificCache(key, object);
-      return true;
-    } catch (e) {
-      return this._handleErrorOnAddingToCache(e, key, object, resolver);
-    }
+  public add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): Promise<boolean> {
+    return this._addToTypeSpecificCache(key, object)
+      .catch(e => this._handleErrorOnAddingToCache(e, key, object, resolver));
   }
 
   public fetch(key: CacheKey): Promise<any> {
@@ -67,25 +63,25 @@ export class Cache implements CachePartition {
     return key.type;
   }
 
-  private _addToTypeSpecificCache(key: CacheKey, object: any): void {
+  private _addToTypeSpecificCache(key: CacheKey, object: any): Promise<boolean> {
     const type: symbol | string = this._getType(key);
 
     const cache: KeyToObjectCache =
       this.typeToCacheMap.get(type) || new KeyToObjectCache();
     this.typeToCacheMap.set(type, cache);
 
-    cache.add(key.key, object);
+    return cache.add(key.key, object).then(() => true);
   }
 
   private _handleErrorOnAddingToCache(
     error: CacheCollisionError,
     key: CacheKey,
     object: any,
-    resolver: Resolver): boolean {
+    resolver: Resolver): Promise<boolean> {
     if (error instanceof CacheCollisionError && !!resolver) {
       return resolver.resolve(this, key, object);
     } else {
-      throw error;
+      return Promise.reject(error);
     }
   }
 }
