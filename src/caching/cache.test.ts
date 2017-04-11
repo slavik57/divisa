@@ -9,6 +9,8 @@ import { Resolver } from "../resolvers/resolvers";
 import { Resolvers } from "../resolvers/resolvers";
 import { CacheKey } from "./cacheKey";
 import { NO_TYPE } from "./noType";
+import { CacheInfo } from "./cacheInfo";
+import * as sizeof from 'object-sizeof';
 
 describe('Cache', () => {
   describe('add-fetch', () => {
@@ -522,5 +524,66 @@ describe('Cache', () => {
 
       expect(spyCallback.callCount).to.be.equal(0);
     });
+  });
+
+  describe('getInfo', () => {
+    it('on emtpy cache should return correct info', async () => {
+      const cache = new Cache();
+
+      const info = await cache.getInfo();
+
+      const expectedInfo: CacheInfo = {
+        numberOfObjects: 0,
+        sizeInBytes: 0
+      };
+      expect(info).to.be.deep.equal(expectedInfo);
+    })
+
+    it('on cache with multiple objects should return correct info', async () => {
+      const cache = new Cache();
+
+      const obj1 = { a: 'as', b: 1 };
+      const obj2 = { abb: 'as1', bab: true };
+      const obj3 = { abbad: null, asd: () => { } };
+
+      await cache.add({ key: 'key1' }, obj1);
+      await cache.add({ key: 'key2', type: 'type' }, obj2);
+      await cache.add({ key: 'key3' }, obj3);
+
+      const info = await cache.getInfo();
+
+      const totalSize = sizeof(obj1) + sizeof(obj2) + sizeof(obj3);
+
+      const expectedInfo: CacheInfo = {
+        numberOfObjects: 3,
+        sizeInBytes: totalSize
+      };
+      expect(info).to.be.deep.equal(expectedInfo);
+    })
+
+    it('after removing some objects should return correct info', async () => {
+      const cache = new Cache();
+
+      const obj1 = { a: 'as', b: 1 };
+      const obj2 = { abb: 'as1', bab: true };
+      const obj3 = { abbad: null, asd: () => { } };
+      const obj4 = { yjf: 'asd', asghdfh: () => { }, tryewyh: 24 };
+
+      await cache.add({ key: 'key1' }, obj1);
+      await cache.add({ key: 'key2', type: 'type' }, obj2);
+      await cache.add({ key: 'key3' }, obj3);
+      await cache.add({ key: 'key4', type: 'other type' }, obj4);
+      await cache.remove({ key: 'key3' });
+
+      const info = await cache.getInfo();
+
+      const totalSize = sizeof(obj1) + sizeof(obj2) + sizeof(obj4);
+
+      const expectedInfo: CacheInfo = {
+        numberOfObjects: 3,
+        sizeInBytes: totalSize
+      };
+      expect(info).to.be.deep.equal(expectedInfo);
+    })
   });
 });

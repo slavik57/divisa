@@ -8,6 +8,7 @@ import { CachePartition } from "./cachePartition";
 import { NO_TYPE } from "./noType";
 import { Observable } from "rxjs/Observable";
 import { Subject } from "rxjs/Subject";
+import { CacheInfo } from "./cacheInfo";
 
 export class Cache implements CachePartition {
   private typeToCacheMap: Map<symbol | string, KeyToObjectCache>;
@@ -72,6 +73,25 @@ export class Cache implements CachePartition {
     }
 
     return result;
+  }
+
+  public async getInfo(): Promise<CacheInfo> {
+    const caches: KeyToObjectCache[] =
+      Array.from(this.typeToCacheMap.values());
+
+    const infos: CacheInfo[] =
+      await Promise.all(caches.map(_ => _.getInfo()));
+
+    return infos.reduce((prev: CacheInfo, curr: CacheInfo) =>
+      ({
+        numberOfObjects: prev.numberOfObjects + curr.numberOfObjects,
+        sizeInBytes: prev.sizeInBytes + curr.sizeInBytes
+      }),
+      {
+        numberOfObjects: 0,
+        sizeInBytes: 0
+      }
+    );
   }
 
   public get keyAdded(): Observable<CacheKey> {

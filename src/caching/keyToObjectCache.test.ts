@@ -5,6 +5,8 @@ import { expect } from 'chai';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
+import { CacheInfo } from "./cacheInfo";
+import * as sizeof from "object-sizeof";
 
 describe('KeyToObjectCache', () => {
   describe('add-fetch', () => {
@@ -124,34 +126,64 @@ describe('KeyToObjectCache', () => {
     });
   });
 
-  describe('size', () => {
-    it('on empty cache should return 0', () => {
+  describe('getInfo', () => {
+    it('on empty cache should return correct info', async () => {
       const cache = new KeyToObjectCache();
 
-      return expect(cache.size).to.eventually.be.equal(0);
+      const info = await cache.getInfo();
+
+      const expected: CacheInfo = {
+        numberOfObjects: 0,
+        sizeInBytes: 0
+      };
+
+      expect(info).to.deep.equal(expected);
     })
 
-    it('on cache with objects should return correct result', () => {
+    it('on cache with objects should return correct result', async () => {
       const cache = new KeyToObjectCache();
 
-      const size = cache.add('a', {})
-        .then(() => cache.add('b', {}))
-        .then(() => cache.add('c', {}))
-        .then(() => cache.size);
+      const obj1 = { a: 1 };
+      const obj2 = { ba: 'asfd' };
+      const obj3 = { adgasg: null };
 
-      return expect(size).to.eventually.be.equal(3);
+      await cache.add('a', obj1);
+      await cache.add('b', obj2);
+      await cache.add('c', obj3);
+
+      const totalSize = sizeof(obj1) + sizeof(obj2) + sizeof(obj3);
+      const expected: CacheInfo = {
+        numberOfObjects: 3,
+        sizeInBytes: totalSize
+      };
+
+      const info = await cache.getInfo();
+
+      expect(info).to.deep.equal(expected);
     })
 
-    it('after removing should return correct result', () => {
+    it('after removing should return correct result', async () => {
       const cache = new KeyToObjectCache();
 
-      const size = cache.add('a', {})
-        .then(() => cache.add('b', {}))
-        .then(() => cache.add('c', {}))
-        .then(() => cache.remove('b'))
-        .then(() => cache.size);
+      const obj1 = { a: 1 };
+      const obj2 = { ba: 'asfd' };
+      const obj3 = { adgasg: null };
 
-      return expect(size).to.eventually.be.equal(2);
+      await cache.add('a', obj1);
+      await cache.add('b', obj2);
+      await cache.add('c', obj3);
+
+      await cache.remove('b');
+
+      const totalSize = sizeof(obj1) + sizeof(obj3);
+      const expected: CacheInfo = {
+        numberOfObjects: 2,
+        sizeInBytes: totalSize
+      };
+
+      const info = await cache.getInfo();
+
+      expect(info).to.deep.equal(expected);
     })
   })
 });
