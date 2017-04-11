@@ -223,13 +223,13 @@ describe('Cache', () => {
     it('removing key on empty cache should not fail', () => {
       const cache = new Cache();
 
-      cache.remove({ key: 'some key' });
+      return expect(cache.remove({ key: 'some key' })).to.eventually.fulfilled;
     });
 
     it('removing key with type on empty cache should not fail', () => {
       const cache = new Cache();
 
-      cache.remove({ key: 'some key', type: 'some type' });
+      expect(cache.remove({ key: 'some key', type: 'some type' })).to.eventually.fulfilled;
     });
 
     it('removing not existing key should not fail', () => {

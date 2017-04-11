@@ -33,12 +33,12 @@ export class Cache implements CachePartition {
     }
   }
 
-  public remove(key: CacheKey): void {
+  public async remove(key: CacheKey): Promise<void> {
     const type: symbol | string = this._getType(key);
 
     const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
-      typeCache.remove(key.key);
+      return typeCache.remove(key.key);
     }
   }
 

@@ -26,7 +26,7 @@ export class KeyToObjectCache {
     return obj;
   }
 
-  public remove(key: string): void {
+  public async remove(key: string): Promise<void> {
     this.keyToObjectMap.delete(key);
   }
 

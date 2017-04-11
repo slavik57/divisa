@@ -45,7 +45,7 @@ describe('KeyToObjectCache', () => {
 
     it('removing should not fail on empty cache', () => {
       const cache = new KeyToObjectCache();
-      cache.remove('not existing key');
+      return expect(cache.remove('not existing key')).to.eventually.fulfilled;
     });
 
     it('removing should remove existing object with same key', () => {
