@@ -586,4 +586,39 @@ describe('Cache', () => {
       expect(info).to.be.deep.equal(expectedInfo);
     })
   });
+
+  describe('getObjectInfo', () => {
+    it('on empty cache should reject', () => {
+      const cache = new Cache();
+
+      return expect(cache.getObjectInfo({ key: 'a' })).to.eventually.rejected;
+    });
+
+    it('on not existing key should reject', async () => {
+      const cache = new Cache();
+
+      await cache.add({ key: 'some key' }, {});
+
+      return expect(cache.getObjectInfo({ key: 'other key' })).to.eventually.rejected;
+    });
+
+    it('on existing key should return correct info', async () => {
+      const cache = new Cache();
+
+      const key: CacheKey = { key: 'some key', type: 'some type' };
+      const obj = { aad: 'safdasdf', saf: 123 };
+
+      const beforeAdd = new Date();
+
+      await cache.add(key, obj);
+
+      const afterAdd = new Date();
+
+      const info = await cache.getObjectInfo(key);
+
+      expect(info.sizeInBytes).to.be.equal(sizeof(obj));
+      expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
+      expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
+    });
+  });
 });
