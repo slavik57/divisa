@@ -42,7 +42,7 @@ export class Cache implements CachePartition {
     }
   }
 
-  public getKeysByTypes(): Map<symbol | string, string[]> {
+  public async getKeysByTypes(): Promise<Map<symbol | string, string[]>> {
     const result = new Map<symbol | string, string[]>();
 
     for (let tuple of this.typeToCacheMap.entries()) {
@@ -52,7 +52,9 @@ export class Cache implements CachePartition {
       const keysOfType: string[] = result.get(type) || [];
       result.set(type, keysOfType);
 
-      keysOfType.push.apply(keysOfType, keyToObjectCache.keys);
+      const keys: string[] = await keyToObjectCache.keys;
+
+      keysOfType.push.apply(keysOfType, keys);
     }
 
     return result;

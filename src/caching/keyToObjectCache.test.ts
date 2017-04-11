@@ -74,10 +74,10 @@ describe('KeyToObjectCache', () => {
   });
 
   describe('keys', () => {
-    it('on empty cache should return empty', () => {
+    it('on empty cache should return empty', async () => {
       const cache = new KeyToObjectCache();
 
-      const keys: string[] = cache.keys;
+      const keys: string[] = await cache.keys;
 
       expect(keys).to.be.empty;
     });
@@ -99,7 +99,7 @@ describe('KeyToObjectCache', () => {
     it('on empty cache should return 0', () => {
       const cache = new KeyToObjectCache();
 
-      expect(cache.size).to.be.equal(0);
+      return expect(cache.size).to.eventually.be.equal(0);
     })
 
     it('on cache with objects should return correct result', () => {

@@ -30,11 +30,11 @@ export class KeyToObjectCache {
     this.keyToObjectMap.delete(key);
   }
 
-  public get keys(): string[] {
-    return Array.from(this.keyToObjectMap.keys());
+  public get keys(): Promise<string[]> {
+    return Promise.resolve(Array.from(this.keyToObjectMap.keys()));
   }
 
-  public get size(): number {
-    return this.keyToObjectMap.size;
+  public get size(): Promise<number> {
+    return Promise.resolve(this.keyToObjectMap.size);
   }
 }

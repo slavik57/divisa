@@ -281,12 +281,12 @@ describe('Cache', () => {
   });
 
   describe('getKeysByTypes', () => {
-    it('should return empty map on empty cache', () => {
+    it('should return empty map on empty cache', async () => {
       const cache = new Cache();
 
-      const keysByTypes = cache.getKeysByTypes();
+      const keysByTypes = await cache.getKeysByTypes();
 
-      expect(keysByTypes.size).to.be.equal(0);
+      return expect(keysByTypes.size).to.be.equal(0);
     })
 
     it('add object without type, should return a map with default type', () => {
