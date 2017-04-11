@@ -4,8 +4,9 @@ import { CacheKey } from "./cacheKey";
 import { Resolver } from "../resolvers/resolver";
 import { CacheCollisionError } from "../errors/errors";
 import { Resolvers } from "../resolvers/resolvers";
+import { CachePartition } from "./cachePartition";
 
-export class Cache {
+export class Cache implements CachePartition {
   private defaultCache: KeyToObjectCache;
   private typeToCacheMap: Map<string, KeyToObjectCache>;
 
