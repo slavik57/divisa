@@ -2,8 +2,9 @@ import { KeyToObjectCache } from "./keyToObjectCache";
 import { isNullOrUndefined } from "../valueChekers/valueCheckers";
 import { CacheKey } from "./cacheKey";
 import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
-import { CacheCollisionError } from "../errors/errors";
+import { BetweenCachesResolver } from "../resolvers/betweenCaches/betweenCachesResolver";
 import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolvers";
+import { CacheCollisionError } from "../errors/errors";
 import { CachePartition } from "./cachePartition";
 import { NO_TYPE } from "./noType";
 import { Observable } from "rxjs/Observable";
@@ -104,6 +105,9 @@ export class Cache implements CachePartition {
     }
 
     return typeCache.getObjectInfo(key.key);
+  }
+
+  public addCachePartition(partition: CachePartition, conflictResolver: BetweenCachesResolver, forType?: string): void {
   }
 
   public get keyAdded(): Observable<CacheKey> {
