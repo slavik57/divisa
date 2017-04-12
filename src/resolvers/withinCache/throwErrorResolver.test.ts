@@ -1,5 +1,4 @@
 import { Cache } from '../../caching/cache';
-import { CacheKey } from '../../caching/cacheKey';
 import { CacheCollisionError } from '../../errors/errors';
 import { ThrowErrorResolver } from "./throwErrorResolver";
 import { spy, SinonSpy } from 'sinon';
@@ -7,7 +6,7 @@ import { expect } from 'chai';
 
 describe('ThrowErrorResolver', () => {
   it('should not add the new object', () => {
-    const key: CacheKey = { key: 'some key' };
+    const key = 'some key';
     const obj = {};
 
     const cache = new Cache();
@@ -21,7 +20,7 @@ describe('ThrowErrorResolver', () => {
   });
 
   it('should not remove the old object', () => {
-    const key: CacheKey = { key: 'some key' };
+    const key = 'some key';
     const obj = {};
 
     const cache = new Cache();
@@ -35,7 +34,7 @@ describe('ThrowErrorResolver', () => {
   });
 
   it('should throw error', () => {
-    const key: CacheKey = { key: 'some key' };
+    const key = 'some key';
     const obj = {};
 
     const cache = new Cache();

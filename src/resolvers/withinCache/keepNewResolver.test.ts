@@ -1,12 +1,11 @@
 import { Cache } from '../../caching/cache';
-import { CacheKey } from '../../caching/cacheKey';
 import { KeepNewResolver } from "./keepNewResolver";
 import { spy, SinonSpy } from 'sinon';
 import { expect } from 'chai';
 
 describe('KeepNewResolver', () => {
   it('should add the new object', () => {
-    const key: CacheKey = { key: 'some key' };
+    const key = 'some key';
     const obj = {};
 
     const cache = new Cache();
@@ -23,7 +22,7 @@ describe('KeepNewResolver', () => {
   });
 
   it('should remove the old object', () => {
-    const key: CacheKey = { key: 'some key' };
+    const key = 'some key';
     const obj = {};
 
     const cache = new Cache();
@@ -39,7 +38,7 @@ describe('KeepNewResolver', () => {
   });
 
   it('should reeturn true', () => {
-    const key: CacheKey = { key: 'some key' };
+    const key = 'some key';
     const obj = {};
 
     const cache = new Cache();

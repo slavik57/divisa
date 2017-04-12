@@ -77,6 +77,6 @@ export class KeyToObjectCache {
   }
 
   private _throwKeyDoesNotExistError(key: string): void {
-    throw `The key ${key} does not exit`;
+    throw `The key [${key}] does not exit`;
   }
 }
