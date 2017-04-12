@@ -263,6 +263,41 @@ describe('Cache', () => {
 
       expect(spyCallback.callCount).to.be.equal(0);
     });
+
+    it('adding to partition should raise keyAdded for main cache as well', async () => {
+      const key = 'some key';
+      const partition = new Cache();
+      const cache = new Cache();
+
+      await cache.addCachePartition(partition);
+
+      const keyAddedSpy = spy();
+      cache.keyAdded.subscribe(keyAddedSpy);
+
+      await partition.add(key, {});
+
+      expect(keyAddedSpy.callCount).to.be.equal(1);
+      expect(keyAddedSpy.args[0]).to.be.deep.equal([key]);
+    });
+
+    it('keyAdded raised twice from the partition should raise keyAdded only once', async () => {
+      const key = 'some key';
+      const partition = new Cache();
+      const partitionKeyAdded = new Subject<string>();
+      stub(partition, 'keyAdded', { get: () => partitionKeyAdded });
+
+      const cache = new Cache();
+      await cache.addCachePartition(partition);
+
+      const keyAddedSpy = spy();
+      cache.keyAdded.subscribe(keyAddedSpy);
+
+      partitionKeyAdded.next(key);
+      partitionKeyAdded.next(key);
+
+      expect(keyAddedSpy.callCount).to.be.equal(1);
+      expect(keyAddedSpy.args[0]).to.be.deep.equal([key]);
+    });
   });
 
   describe('keyRemoved', () => {
@@ -353,6 +388,64 @@ describe('Cache', () => {
       await cache.add(key, {}, WithinCacheResolvers.KeepOldResolver);
 
       expect(spyCallback.callCount).to.be.equal(0);
+    });
+
+    it('removing from partition should raise keyRemoved for main cache as well', async () => {
+      const key = 'some key';
+      const partition = new Cache();
+      await partition.add(key, {});
+
+      const cache = new Cache();
+      await cache.addCachePartition(partition);
+
+      const keyRemovedSpy = spy();
+      cache.keyRemoved.subscribe(keyRemovedSpy);
+
+      await partition.remove(key);
+
+      expect(keyRemovedSpy.callCount).to.be.equal(1);
+      expect(keyRemovedSpy.args[0]).to.be.deep.equal([key]);
+    });
+
+    it('keyRemoved raised twice from the partition should raise keyRemoved only once', async () => {
+      const key = 'some key';
+      const partition = new Cache();
+      const partitionKeyRemoved = new Subject<string>();
+      stub(partition, 'keyRemoved', { get: () => partitionKeyRemoved });
+
+      const cache = new Cache();
+      await cache.addCachePartition(partition);
+      await partition.add(key, {});
+
+      const keyRemovedSpy = spy();
+      cache.keyRemoved.subscribe(keyRemovedSpy);
+
+      partitionKeyRemoved.next(key);
+      partitionKeyRemoved.next(key);
+
+      expect(keyRemovedSpy.callCount).to.be.equal(1);
+      expect(keyRemovedSpy.args[0]).to.be.deep.equal([key]);
+    });
+
+    it('keyRemoved raised from different partition should not raise keyRemoved', async () => {
+      const key = 'some key';
+      const paartition = new Cache();
+      await paartition.add(key, {});
+
+      const otherPartition = new Cache();
+      const partitionKeyRemoved = new Subject<string>();
+      stub(otherPartition, 'keyRemoved', { get: () => partitionKeyRemoved });
+
+      const cache = new Cache();
+      await cache.addCachePartition(paartition);
+      await cache.addCachePartition(otherPartition);
+
+      const keyRemovedSpy = spy();
+      cache.keyRemoved.subscribe(keyRemovedSpy);
+
+      partitionKeyRemoved.next(key);
+
+      expect(keyRemovedSpy.callCount).to.be.equal(0);
     });
   });
 

@@ -14,22 +14,22 @@ export class Cache implements CachePartition {
   private _keyToObjectCache: KeyToObjectCache;
   private _partitions: CachePartition[];
   private _keyToPartitionMap: Map<string, CachePartition>;
-  private _keyAddedObservable: Subject<string>;
-  private _keyRemovedObservable: Subject<string>;
+  private _keyAdded: Subject<string>;
+  private _keyRemoved: Subject<string>;
 
   constructor() {
     this._keyToObjectCache = new KeyToObjectCache();
     this._partitions = [];
     this._keyToPartitionMap = new Map<string, CachePartition>();
-    this._keyAddedObservable = new Subject<string>();
-    this._keyRemovedObservable = new Subject<string>();
+    this._keyAdded = new Subject<string>();
+    this._keyRemoved = new Subject<string>();
   }
 
   public async add(key: string, object: any, resolver: WithinCacheResolver = WithinCacheResolvers.ThrowErrorResolver): Promise<boolean> {
     try {
       await this._keyToObjectCache.add(key, object);
 
-      this._keyAddedObservable.next(key);
+      this._keyAdded.next(key);
 
       return true;
     } catch (e) {
@@ -53,7 +53,7 @@ export class Cache implements CachePartition {
 
   public async remove(key: string): Promise<void> {
     if (await this._keyToObjectCache.remove(key)) {
-      this._keyRemovedObservable.next(key);
+      this._keyRemoved.next(key);
     }
   }
 
@@ -88,17 +88,17 @@ export class Cache implements CachePartition {
     }
 
     this._partitions.push(partition);
-    partition.keyAdded.subscribe(newKey => this._mapKeyToPartition(newKey, partition));
-    partition.keyRemoved.subscribe(oldKey => this._unmapKeyFromPartition(oldKey, partition));
+    partition.keyAdded.subscribe(newKey => this._onKeyAddedToPartition(newKey, partition));
+    partition.keyRemoved.subscribe(oldKey => this._onKeyRemovedFromPartition(oldKey, partition));
     await this._mapKeysToPartitions(partition);
   }
 
   public get keyAdded(): Observable<string> {
-    return this._keyAddedObservable;
+    return this._keyAdded;
   }
 
   public get keyRemoved(): Observable<string> {
-    return this._keyRemovedObservable;
+    return this._keyRemoved;
   }
 
   private async _handleErrorOnAddingToCache(
@@ -121,16 +121,31 @@ export class Cache implements CachePartition {
     const keys: string[] = await partition.getKeys();
 
     keys.forEach(key => {
-      this._mapKeyToPartition(key, partition);
+      this._onKeyAddedToPartition(key, partition);
     });
   }
 
-  private _mapKeyToPartition(key: string, partition: CachePartition): void {
+  private _onKeyAddedToPartition(key: string, partition: CachePartition): void {
+    if (this._keyToPartitionMap.has(key)) {
+      return;
+    }
+
     this._keyToPartitionMap.set(key, partition);
+
+    this._keyAdded.next(key);
   }
 
-  private _unmapKeyFromPartition(key: string, partition: CachePartition): void {
+  private _onKeyRemovedFromPartition(key: string, partition: CachePartition): void {
+    const partitionForKey = this._keyToPartitionMap.get(key);
+
+    if (isNullOrUndefined(partitionForKey) ||
+      partitionForKey !== partition) {
+      return;
+    }
+
     this._keyToPartitionMap.delete(key);
+
+    this._keyRemoved.next(key);
   }
 
   private async _fetchFromPartition(key: string, partition: CachePartition): Promise<void> {
