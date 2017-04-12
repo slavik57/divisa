@@ -3,7 +3,7 @@ import { isNullOrUndefined } from "../valueChekers/valueCheckers";
 import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
 import { BetweenCachesResolver } from "../resolvers/betweenCaches/betweenCachesResolver";
 import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolvers";
-import { CacheCollisionError } from "../errors/errors";
+import { CacheCollisionError, KeyNotFoundError } from "../errors/errors";
 import { CachePartition } from "./cachePartition";
 import { Observable } from "rxjs/Observable";
 import { Subject } from "rxjs/Subject";
@@ -45,7 +45,7 @@ export class Cache implements CachePartition {
 
     const partition: CachePartition = this._keyToPartitionMap.get(key);
     if (!isNullOrUndefined(partition)) {
-      return partition.fetch(key);
+      return this._fetchFromPartition(key, partition);
     }
 
     this._throwNoObjectWithKeyError(key);
@@ -111,7 +111,7 @@ export class Cache implements CachePartition {
   }
 
   private _throwNoObjectWithKeyError(key: string): void {
-    throw `There is no object registered for key [${key}]`;
+    throw new KeyNotFoundError(key);
   }
 
   private async _mapKeysToPartitions(partition: CachePartition): Promise<void> {
@@ -128,5 +128,22 @@ export class Cache implements CachePartition {
 
   private _unmapKeyFromPartition(key: string, partition: CachePartition): void {
     this._keyToPartitionMap.delete(key);
+  }
+
+  private async _fetchFromPartition(key: string, partition: CachePartition): Promise<void> {
+    try {
+      return await partition.fetch(key);
+    } catch (e) {
+      this._handleFetchFromPartitionFailed(e, key, partition);
+    }
+  }
+
+  private _handleFetchFromPartitionFailed(error: any, key: string, partition: CachePartition): void {
+    if (error instanceof KeyNotFoundError &&
+      this._keyToPartitionMap.get(key) === partition) {
+      this._keyToPartitionMap.delete(key);
+    }
+
+    throw error;
   }
 }

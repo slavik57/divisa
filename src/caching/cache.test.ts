@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 import { Cache } from './cache';
-import { CacheCollisionError } from "../index";
+import { CacheCollisionError, KeyNotFoundError } from "../errors/errors";
 import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
 import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolvers";
 import { BetweenCachesResolver } from "../resolvers/betweenCaches/betweenCachesResolver";
@@ -16,7 +16,7 @@ describe('Cache', () => {
   describe('add-fetch', () => {
     it('fetching should reject on empty cache', () => {
       const cache = new Cache();
-      return expect(cache.fetch('not existing key')).to.eventually.be.rejected;
+      return expect(cache.fetch('not existing key')).to.eventually.be.rejectedWith(KeyNotFoundError);
     });
 
     it('adding not existing key should resolve with true', async () => {
@@ -621,6 +621,57 @@ describe('Cache', () => {
       keyRemoved.next(key);
 
       return expect(cache.fetch(key)).to.eventually.rejected;
+    });
+
+    it('fetching from partition fails for some unknown reason, second time should fetch from partition', async () => {
+      const key = 'some key';
+
+      const keyAdded = new Subject<string>();
+      stub(partition, 'keyAdded', { get: () => keyAdded });
+
+      const fetchSpy = stub(partition, 'fetch', () => { throw 'some error' });
+
+      await cache.addCachePartition(partition, resolver);
+      keyAdded.next(key);
+
+      try {
+        await cache.fetch(key);
+      } catch (e) {
+      }
+
+      expect(fetchSpy.callCount).to.be.equal(1);
+
+      try {
+        await cache.fetch(key);
+      } catch (e) {
+      }
+
+      expect(fetchSpy.callCount).to.be.equal(2);
+    });
+
+    it('fetching from partition fails, second time should not fetch from partition', async () => {
+      const keyAdded = new Subject<string>();
+      stub(partition, 'keyAdded', { get: () => keyAdded });
+
+      const fetchSpy = spy(partition, 'fetch');
+      await cache.addCachePartition(partition, resolver);
+
+      const key = 'some key';
+      keyAdded.next(key);
+
+      try {
+        await cache.fetch(key);
+      } catch (e) {
+      }
+
+      expect(fetchSpy.callCount).to.be.equal(1, 'should call the first time');
+
+      try {
+        await cache.fetch(key);
+      } catch (e) {
+      }
+
+      expect(fetchSpy.callCount).to.be.equal(1, 'should not call the second time');
     });
   });
 });

@@ -1,6 +1,6 @@
 import { stub, SinonStub } from 'sinon';
 import { KeyToObjectCache } from './keyToObjectCache';
-import { CacheCollisionError } from '../index';
+import { CacheCollisionError, KeyNotFoundError } from '../errors/errors';
 import { expect } from 'chai';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -12,7 +12,7 @@ describe('KeyToObjectCache', () => {
   describe('add-fetch', () => {
     it('fetching should reject on empty cache', () => {
       const cache = new KeyToObjectCache();
-      return expect(cache.fetch('not existing key')).to.eventually.be.rejected;
+      return expect(cache.fetch('not existing key')).to.eventually.be.rejectedWith(KeyNotFoundError);
     });
 
     it('fetching should return existing object with same key', () => {

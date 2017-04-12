@@ -1,5 +1,5 @@
 import isNullOrUndefined from "../valueChekers/isNullOrUndefined";
-import { CacheCollisionError } from '../errors/errors';
+import { CacheCollisionError, KeyNotFoundError } from '../errors/errors';
 import { CacheInfo } from "./cacheInfo";
 import * as sizeof from "object-sizeof";
 import { CacheObjectInfo } from "./cacheObjectInfo";
@@ -77,6 +77,6 @@ export class KeyToObjectCache {
   }
 
   private _throwKeyDoesNotExistError(key: string): void {
-    throw `The key [${key}] does not exit`;
+    throw new KeyNotFoundError(key);
   }
 }
