@@ -86,6 +86,7 @@ export class Cache implements CachePartition {
 
     this._partitions.push(partition);
     partition.keyAdded.subscribe(newKey => this._mapKeyToPartition(newKey, partition));
+    partition.keyRemoved.subscribe(oldKey => this._unmapKeyFromPartition(oldKey, partition));
     await this._mapKeysToPartitions(partition);
   }
 
@@ -123,5 +124,9 @@ export class Cache implements CachePartition {
 
   private _mapKeyToPartition(key: string, partition: CachePartition): void {
     this._keyToPartitionMap.set(key, partition);
+  }
+
+  private _unmapKeyFromPartition(key: string, partition: CachePartition): void {
+    this._keyToPartitionMap.delete(key);
   }
 }

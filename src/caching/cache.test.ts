@@ -1,4 +1,4 @@
-import { spy, SinonSpy } from 'sinon';
+import { spy, stub, SinonSpy } from 'sinon';
 import { expect } from 'chai';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -10,6 +10,7 @@ import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolv
 import { BetweenCachesResolver } from "../resolvers/betweenCaches/betweenCachesResolver";
 import { CacheInfo } from "./cacheInfo";
 import * as sizeof from 'object-sizeof';
+import { Subject } from "rxjs/Subject";
 
 describe('Cache', () => {
   describe('add-fetch', () => {
@@ -525,6 +526,101 @@ describe('Cache', () => {
       const result = await cache.fetch(key);
 
       expect(result).to.be.equal(obj);
+    });
+
+    it('add partition, remove object from partition, fetching by removed key should reject', async () => {
+      const key = 'some key';
+      const obj = {};
+
+      await partition.add(key, obj);
+      await cache.addCachePartition(partition, resolver);
+      await partition.remove(key);
+
+      return expect(cache.fetch(key)).to.eventually.rejected;
+    });
+
+    it('add partitions, remove object from partition, fetching by removed key should reject', async () => {
+      const key = 'some key';
+      const obj = {};
+
+      await partition.add(key, obj);
+      await cache.addCachePartition(new Cache(), resolver);
+      await cache.addCachePartition(partition, resolver);
+      await cache.addCachePartition(new Cache(), resolver);
+      await partition.remove(key);
+
+      return expect(cache.fetch(key)).to.eventually.rejected;
+    });
+
+    it('add partition, remove object from partition, fetching by removed key should not fetch from the partition', async () => {
+      const key = 'some key';
+      const obj = {};
+
+      await partition.add(key, obj);
+      await cache.addCachePartition(partition, resolver);
+      await partition.remove(key);
+
+      const fetchSpy = spy(partition, 'fetch');
+
+      try {
+        await cache.fetch(key);
+      } catch (e) {
+      }
+
+      expect(fetchSpy.callCount).to.be.equal(0);
+    });
+
+    it('add partitions, remove object from partition, fetching by removed key should not fetch from the partition', async () => {
+      const key = 'some key';
+      const obj = {};
+
+      await partition.add(key, obj);
+      await cache.addCachePartition(new Cache(), resolver);
+      await cache.addCachePartition(partition, resolver);
+      await cache.addCachePartition(new Cache(), resolver);
+      await partition.remove(key);
+
+      const fetchSpy = spy(partition, 'fetch');
+
+      try {
+        await cache.fetch(key);
+      } catch (e) {
+      }
+
+      expect(fetchSpy.callCount).to.be.equal(0);
+    });
+
+    it('key added raised multiple times in a row for same key from the partition, should not fail', async () => {
+      const keyAdded = new Subject<string>();
+      stub(partition, 'keyAdded', { get: () => keyAdded });
+
+      await cache.addCachePartition(partition, resolver);
+
+      const obj = {};
+      stub(partition, 'fetch', () => Promise.resolve(obj));
+
+      const key = 'some key';
+      keyAdded.next(key);
+      keyAdded.next(key);
+
+      const result = await cache.fetch(key);
+      expect(result).to.be.equal(obj);
+    });
+
+
+    it('key removed raised multiple times in a row for same key from the partition, should not fail', async () => {
+      const keyRemoved = new Subject<string>();
+      stub(partition, 'keyRemoved', { get: () => keyRemoved });
+
+      const key = 'some key';
+      const obj = {};
+      await partition.add(key, obj);
+      await cache.addCachePartition(partition, resolver);
+
+      keyRemoved.next(key);
+      keyRemoved.next(key);
+
+      return expect(cache.fetch(key)).to.eventually.rejected;
     });
   });
 });
