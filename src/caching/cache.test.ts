@@ -169,6 +169,37 @@ describe('Cache', () => {
 
       expect(keys).to.be.deep.equal([key1, key2, key3, key4]);
     })
+
+    it('should return keys from all partitions', async () => {
+
+      const key1 = 'key1';
+      const key2 = 'key2';
+      const key3 = 'key3';
+      const key4 = 'key4';
+
+      const partition1 = new Cache();
+      const partition2 = new Cache();
+      const partition3 = new Cache();
+
+      await partition1.add(key1, {});
+      await partition2.add(key2, {});
+      await partition3.add(key3, {});
+
+      const cache = new Cache();
+      await cache.add(key4, {});
+
+      await cache.addCachePartition(partition1);
+      await cache.addCachePartition(partition2);
+      await cache.addCachePartition(partition3);
+
+      const keys = await cache.getKeys();
+
+      expect(keys).to.be.length(4);
+      expect(keys).to.contain(key1);
+      expect(keys).to.contain(key2);
+      expect(keys).to.contain(key3);
+      expect(keys).to.contain(key4);
+    });
   });
 
   describe('keyAdded', () => {

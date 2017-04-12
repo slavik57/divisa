@@ -61,8 +61,11 @@ export class Cache implements CachePartition {
     const result: string[] = [];
 
     const localKeys: string[] = await this._keyToObjectCache.keys;
+    const partitionsKeys: string[] =
+      Array.from(this._keyToPartitionMap.keys());
 
     result.push.apply(result, localKeys);
+    result.push.apply(result, partitionsKeys);
 
     return result;
   }
@@ -75,7 +78,7 @@ export class Cache implements CachePartition {
     return this._keyToObjectCache.getObjectInfo(key);
   }
 
-  public async addCachePartition(partition: CachePartition, conflictResolver: BetweenCachesResolver): Promise<void> {
+  public async addCachePartition(partition: CachePartition, conflictResolver?: BetweenCachesResolver): Promise<void> {
     if (partition === this) {
       throw `Cannot add self as a partition`;
     }

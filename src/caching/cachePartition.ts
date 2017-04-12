@@ -13,7 +13,7 @@ export interface CachePartition {
   getInfo(): Promise<CacheInfo>;
   getObjectInfo(key: string): Promise<CacheObjectInfo>;
 
-  addCachePartition(partition: CachePartition, conflictResolver: BetweenCachesResolver): Promise<void>;
+  addCachePartition(partition: CachePartition, conflictResolver?: BetweenCachesResolver): Promise<void>;
 
   readonly keyAdded: Observable<string>;
   readonly keyRemoved: Observable<string>;
