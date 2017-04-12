@@ -499,5 +499,32 @@ describe('Cache', () => {
 
       expect(result).to.be.equal(obj);
     });
+
+    it('add partition, add object to partition, fetching by key existing in partition cache should return the object', async () => {
+      const key = 'some key';
+      const obj = {};
+
+      await cache.addCachePartition(partition, resolver);
+      await partition.add(key, obj);
+
+      const result = await cache.fetch(key);
+
+      expect(result).to.be.equal(obj);
+    });
+
+    it('add partitions, add object to partition, fetching by key existing in one of the partitions should return the object', async () => {
+      const key = 'some key';
+      const obj = {};
+
+      await cache.addCachePartition(new Cache(), resolver);
+      await cache.addCachePartition(partition, resolver);
+      await cache.addCachePartition(new Cache(), resolver);
+
+      await partition.add(key, obj);
+
+      const result = await cache.fetch(key);
+
+      expect(result).to.be.equal(obj);
+    });
   });
 });

@@ -85,6 +85,7 @@ export class Cache implements CachePartition {
     }
 
     this._partitions.push(partition);
+    partition.keyAdded.subscribe(newKey => this._mapKeyToPartition(newKey, partition));
     await this._mapKeysToPartitions(partition);
   }
 
@@ -116,7 +117,11 @@ export class Cache implements CachePartition {
     const keys: string[] = await partition.getKeys();
 
     keys.forEach(key => {
-      this._keyToPartitionMap.set(key, partition);
+      this._mapKeyToPartition(key, partition);
     });
+  }
+
+  private _mapKeyToPartition(key: string, partition: CachePartition): void {
+    this._keyToPartitionMap.set(key, partition);
   }
 }
