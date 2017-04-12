@@ -81,7 +81,13 @@ export class Cache implements CachePartition {
   }
 
   public async getObjectInfo(key: string): Promise<CacheObjectInfo> {
-    return this._keyToObjectCache.getObjectInfo(key);
+    try {
+      return await this._keyToObjectCache.getObjectInfo(key);
+    } catch (e) {
+      if (e instanceof KeyNotFoundError) {
+        return this._getObjectInfoFromPartition(key);
+      }
+    }
   }
 
   public async addCachePartition(partition: CachePartition, conflictResolver?: BetweenCachesResolver): Promise<void> {
@@ -169,5 +175,14 @@ export class Cache implements CachePartition {
     }
 
     throw error;
+  }
+
+  private async _getObjectInfoFromPartition(key: string): Promise<CacheObjectInfo> {
+    const partition = this._keyToPartitionMap.get(key);
+    if (isNullOrUndefined(partition)) {
+      this._throwNoObjectWithKeyError(key);
+    }
+
+    return partition.getObjectInfo(key);
   }
 }

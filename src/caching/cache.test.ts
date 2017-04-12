@@ -556,6 +556,47 @@ describe('Cache', () => {
       expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
       expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
     });
+
+    it('on existing local key should not getObjectInfo from partition', async () => {
+      const partition = new Cache();
+      const cache = new Cache();
+      await cache.addCachePartition(partition);
+
+      const key = 'some key';
+      const obj = { asdasdf: 'adsad' };
+
+      const beforeAdd = new Date();
+      await cache.add(key, obj);
+      const afterAdd = new Date();
+
+      const partitionGetObjectInfoSpy = spy(partition, 'getObjectInfo');
+
+      const info = await cache.getObjectInfo(key);
+
+      expect(partitionGetObjectInfoSpy.callCount).to.be.equal(0);
+      expect(info.sizeInBytes).to.be.equal(sizeof(obj));
+      expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
+      expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
+    })
+
+    it('when key is in partition should getObjectInfo from partition', async () => {
+      const partition = new Cache();
+      const cache = new Cache();
+      await cache.addCachePartition(partition);
+
+      const key = 'some key';
+      const obj = { asdasdf: 'adsad' };
+
+      const beforeAdd = new Date();
+      await partition.add(key, obj);
+      const afterAdd = new Date();
+
+      const info = await cache.getObjectInfo(key);
+
+      expect(info.sizeInBytes).to.be.equal(sizeof(obj));
+      expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
+      expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
+    })
   });
 
   describe('addCachePartition', () => {
