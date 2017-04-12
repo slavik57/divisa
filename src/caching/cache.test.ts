@@ -7,6 +7,7 @@ import { Cache } from './cache';
 import { CacheCollisionError } from "../index";
 import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
 import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolvers";
+import { BetweenCachesResolver } from "../resolvers/betweenCaches/betweenCachesResolver";
 import { CacheKey } from "./cacheKey";
 import { NO_TYPE } from "./noType";
 import { CacheInfo } from "./cacheInfo";
@@ -619,6 +620,96 @@ describe('Cache', () => {
       expect(info.sizeInBytes).to.be.equal(sizeof(obj));
       expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
       expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
+    });
+  });
+
+  describe('addCachePartition', () => {
+    let cache: Cache;
+    let partition: Cache;
+    let resolver: BetweenCachesResolver;
+    let resolveResolver: (result: boolean) => void;
+    let rejectResolver: (reason: any) => void;
+
+    beforeEach(() => {
+      cache = new Cache();
+      partition = new Cache();
+
+      resolver = {
+        resolve: () => new Promise<boolean>((resolve, reject) => {
+          resolveResolver = resolve;
+          rejectResolver = reject;
+        })
+      }
+    });
+
+    it('adding partition for same type should fail', () => {
+      const type = 'some type';
+
+      cache.addCachePartition(partition, resolver, type);
+      expect(() => cache.addCachePartition(partition, resolver, type)).to.throw();
+    });
+
+    it('adding partition equal to the cache should fail', () => {
+      const type = 'some type';
+
+      expect(() => cache.addCachePartition(cache, resolver, type)).to.throw();
+    });
+
+    it('fetching bey not existing in cache and partition should reject', async () => {
+      cache.addCachePartition(partition, resolver);
+
+      const key: CacheKey = { key: 'some key' };
+
+      return expect(cache.fetch(key)).to.eventually.rejected;
+    });
+
+    it('fetching by key existing in original cache should return the object', async () => {
+      cache.addCachePartition(partition, resolver);
+
+      const key: CacheKey = { key: 'some key' };
+      const obj = {};
+      await cache.add(key, obj);
+
+      const result = await cache.fetch(key);
+
+      expect(result).to.be.equal(obj);
+    });
+
+    it('fetching by key existing in partition cache should return the object', async () => {
+      cache.addCachePartition(partition, resolver);
+
+      const key: CacheKey = { key: 'some key' };
+      const obj = {};
+      await partition.add(key, obj);
+
+      const result = await cache.fetch(key);
+
+      expect(result).to.be.equal(obj);
+    });
+
+    it('fetching by key existing in partition cache with same type should return the object', async () => {
+
+      const type = 'some type';
+      const key: CacheKey = { key: 'some key', type: type };
+      const obj = {};
+      await partition.add(key, obj);
+
+      cache.addCachePartition(partition, resolver, type);
+
+      const result = await cache.fetch(key);
+
+      expect(result).to.be.equal(obj);
+    });
+
+    it('fetching with type other than the partition type should reject', async () => {
+      const type = 'some type';
+      cache.addCachePartition(partition, resolver, type);
+
+      const key: CacheKey = { key: 'some key', type: 'other type' };
+      const obj = {};
+      await partition.add(key, obj);
+
+      return expect(cache.fetch(key)).to.eventually.rejected;
     });
   });
 });

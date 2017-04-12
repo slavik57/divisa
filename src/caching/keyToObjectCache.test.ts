@@ -215,7 +215,7 @@ describe('KeyToObjectCache', () => {
 
       expect(info.sizeInBytes).to.be.equal(sizeof(obj));
       expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
-      expect(info.dateAdded.valueOf()).to.be.least(afterAdd.valueOf());
+      expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
     });
   })
 });

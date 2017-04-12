@@ -12,22 +12,26 @@ import { Subject } from "rxjs/Subject";
 import { CacheInfo } from "./cacheInfo";
 import { CacheObjectInfo } from "./cacheObjectInfo";
 
+export type ObjectType = string | symbol;
+
 export class Cache implements CachePartition {
-  private typeToCacheMap: Map<symbol | string, KeyToObjectCache>;
-  private keyAddedObservable: Subject<CacheKey>;
-  private keyRemovedObservable: Subject<CacheKey>;
+  private _typeToCacheMap: Map<ObjectType, KeyToObjectCache>;
+  private _typeToPartitionMap: Map<ObjectType, CachePartition>;
+  private _keyAddedObservable: Subject<CacheKey>;
+  private _keyRemovedObservable: Subject<CacheKey>;
 
   constructor() {
-    this.typeToCacheMap = new Map<symbol | string, KeyToObjectCache>();
-    this.keyAddedObservable = new Subject<CacheKey>();
-    this.keyRemovedObservable = new Subject<CacheKey>();
+    this._typeToCacheMap = new Map<ObjectType, KeyToObjectCache>();
+    this._typeToPartitionMap = new Map<ObjectType, CachePartition>();
+    this._keyAddedObservable = new Subject<CacheKey>();
+    this._keyRemovedObservable = new Subject<CacheKey>();
   }
 
   public async add(key: CacheKey, object: any, resolver: WithinCacheResolver = WithinCacheResolvers.ThrowErrorResolver): Promise<boolean> {
     try {
       await this._addToTypeSpecificCache(key, object);
 
-      this.keyAddedObservable.next(key);
+      this._keyAddedObservable.next(key);
 
       return true;
     } catch (e) {
@@ -36,34 +40,39 @@ export class Cache implements CachePartition {
   }
 
   public async fetch(key: CacheKey): Promise<any> {
-    const type: symbol | string = this._getType(key);
+    const type: ObjectType = this._getType(key.type);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
+    const typeCache: KeyToObjectCache = this._typeToCacheMap.get(type);
     if (!isNullOrUndefined(typeCache)) {
       return typeCache.fetch(key.key);
-    } else {
-      this._throwNoObjectWithKeyError(key);
     }
+
+    const typePartition: CachePartition = this._typeToPartitionMap.get(type);
+    if (!isNullOrUndefined(typePartition)) {
+      return typePartition.fetch(key);
+    }
+
+    this._throwNoObjectWithKeyError(key);
   }
 
   public async remove(key: CacheKey): Promise<void> {
-    const type: symbol | string = this._getType(key);
+    const type: ObjectType = this._getType(key.type);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
+    const typeCache: KeyToObjectCache = this._typeToCacheMap.get(type);
     if (isNullOrUndefined(typeCache)) {
       return;
     }
 
     if (await typeCache.remove(key.key)) {
-      this.keyRemovedObservable.next(key);
+      this._keyRemovedObservable.next(key);
     }
   }
 
-  public async getKeysByTypes(): Promise<Map<symbol | string, string[]>> {
-    const result = new Map<symbol | string, string[]>();
+  public async getKeysByTypes(): Promise<Map<ObjectType, string[]>> {
+    const result = new Map<ObjectType, string[]>();
 
-    for (let tuple of this.typeToCacheMap.entries()) {
-      const type: symbol | string = tuple[0];
+    for (let tuple of this._typeToCacheMap.entries()) {
+      const type: ObjectType = tuple[0];
       const keyToObjectCache: KeyToObjectCache = tuple[1];
 
       const keysOfType: string[] = result.get(type) || [];
@@ -79,7 +88,7 @@ export class Cache implements CachePartition {
 
   public async getInfo(): Promise<CacheInfo> {
     const caches: KeyToObjectCache[] =
-      Array.from(this.typeToCacheMap.values());
+      Array.from(this._typeToCacheMap.values());
 
     const infos: CacheInfo[] =
       await Promise.all(caches.map(_ => _.info));
@@ -97,9 +106,9 @@ export class Cache implements CachePartition {
   }
 
   public async getObjectInfo(key: CacheKey): Promise<CacheObjectInfo> {
-    const type: symbol | string = this._getType(key);
+    const type: ObjectType = this._getType(key.type);
 
-    const typeCache: KeyToObjectCache = this.typeToCacheMap.get(type);
+    const typeCache: KeyToObjectCache = this._typeToCacheMap.get(type);
     if (isNullOrUndefined(typeCache)) {
       this._throwNoObjectWithKeyError(key);
     }
@@ -108,30 +117,41 @@ export class Cache implements CachePartition {
   }
 
   public addCachePartition(partition: CachePartition, conflictResolver: BetweenCachesResolver, forType?: string): void {
+    if (partition === this) {
+      throw `Cannot add self as a partition`;
+    }
+
+    const type: ObjectType = this._getType(forType);
+
+    if (this._typeToPartitionMap.has(type)) {
+      throw `A partition for the type [${type}] already exists`;
+    }
+
+    this._typeToPartitionMap.set(type, partition);
   }
 
   public get keyAdded(): Observable<CacheKey> {
-    return this.keyAddedObservable;
+    return this._keyAddedObservable;
   }
 
   public get keyRemoved(): Observable<CacheKey> {
-    return this.keyRemovedObservable;
+    return this._keyRemovedObservable;
   }
 
-  private _getType(key: CacheKey): symbol | string {
-    if (isNullOrUndefined(key.type)) {
+  private _getType(type: string): ObjectType {
+    if (isNullOrUndefined(type)) {
       return NO_TYPE;
     }
 
-    return key.type;
+    return type;
   }
 
   private async _addToTypeSpecificCache(key: CacheKey, object: any): Promise<void> {
-    const type: symbol | string = this._getType(key);
+    const type: ObjectType = this._getType(key.type);
 
     const cache: KeyToObjectCache =
-      this.typeToCacheMap.get(type) || new KeyToObjectCache();
-    this.typeToCacheMap.set(type, cache);
+      this._typeToCacheMap.get(type) || new KeyToObjectCache();
+    this._typeToCacheMap.set(type, cache);
 
     await cache.add(key.key, object);
   }
