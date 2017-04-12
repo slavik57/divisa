@@ -1,3 +1,3 @@
 export * from './errors/errors';
-export * from './resolvers/resolvers';
+export * from './resolvers/withinCache/withinCacheResolvers';
 export * from './caching/caching';

@@ -5,8 +5,8 @@ import * as chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 import { Cache } from './cache';
 import { CacheCollisionError } from "../index";
-import { Resolver } from "../resolvers/resolvers";
-import { Resolvers } from "../resolvers/resolvers";
+import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
+import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolvers";
 import { CacheKey } from "./cacheKey";
 import { NO_TYPE } from "./noType";
 import { CacheInfo } from "./cacheInfo";
@@ -136,7 +136,7 @@ describe('Cache', () => {
     it('adding same key should use the resolver', () => {
       const cache = new Cache();
       const key = 'some key';
-      const resolver: Resolver = {
+      const resolver: WithinCacheResolver = {
         resolve: () => Promise.resolve(true)
       };
       const resolveSpy: SinonSpy = spy(resolver, 'resolve');
@@ -161,7 +161,7 @@ describe('Cache', () => {
       const key = 'some key';
       const type = 'some type';
       const obj = {};
-      const resolver: Resolver = {
+      const resolver: WithinCacheResolver = {
         resolve: () => Promise.resolve(true)
       };
       const resolveSpy: SinonSpy = spy(resolver, 'resolve');
@@ -188,7 +188,7 @@ describe('Cache', () => {
       const key = 'some key';
 
       const result = {};
-      const resolver: Resolver = {
+      const resolver: WithinCacheResolver = {
         resolve: () => <Promise<boolean>>result
       };
 
@@ -208,7 +208,7 @@ describe('Cache', () => {
       const obj = {};
 
       const result = {};
-      const resolver: Resolver = {
+      const resolver: WithinCacheResolver = {
         resolve: () => <Promise<boolean>>result
       };
 
@@ -399,7 +399,7 @@ describe('Cache', () => {
       const spyCallback: SinonSpy = spy();
       cache.keyAdded.subscribe(spyCallback);
 
-      await cache.add(key, {}, Resolvers.KeepNewResolver);
+      await cache.add(key, {}, WithinCacheResolvers.KeepNewResolver);
 
       expect(spyCallback.callCount).to.be.equal(1);
     });
@@ -417,7 +417,7 @@ describe('Cache', () => {
       const spyCallback: SinonSpy = spy();
       cache.keyAdded.subscribe(spyCallback);
 
-      await cache.add(key, {}, Resolvers.KeepOldResolver);
+      await cache.add(key, {}, WithinCacheResolvers.KeepOldResolver);
 
       expect(spyCallback.callCount).to.be.equal(0);
     });
@@ -482,7 +482,7 @@ describe('Cache', () => {
       const spyCallback: SinonSpy = spy();
       cache.keyRemoved.subscribe(spyCallback);
 
-      await cache.add(key, {}, Resolvers.KeepNewResolver);
+      await cache.add(key, {}, WithinCacheResolvers.KeepNewResolver);
 
       expect(spyCallback.callCount).to.be.equal(1);
     });
@@ -502,7 +502,7 @@ describe('Cache', () => {
       cache.keyAdded.subscribe(addSpy);
       cache.keyRemoved.subscribe(removeSpy);
 
-      await cache.add(key, {}, Resolvers.KeepNewResolver);
+      await cache.add(key, {}, WithinCacheResolvers.KeepNewResolver);
 
       expect(removeSpy.firstCall.calledBefore(addSpy.firstCall)).to.be.true;
     });
@@ -520,7 +520,7 @@ describe('Cache', () => {
       const spyCallback: SinonSpy = spy();
       cache.keyRemoved.subscribe(spyCallback);
 
-      await cache.add(key, {}, Resolvers.KeepOldResolver);
+      await cache.add(key, {}, WithinCacheResolvers.KeepOldResolver);
 
       expect(spyCallback.callCount).to.be.equal(0);
     });

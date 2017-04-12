@@ -1,11 +1,11 @@
 import { CacheKey } from "./cacheKey";
-import { Resolver } from "../resolvers/resolver";
+import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
 import { Observable } from "rxjs/Observable";
 import { CacheInfo } from "./cacheInfo";
 import { CacheObjectInfo } from "./cacheObjectInfo";
 
 export interface CachePartition {
-  add(key: CacheKey, object: any, resolver?: Resolver): Promise<boolean>;
+  add(key: CacheKey, object: any, resolver?: WithinCacheResolver): Promise<boolean>;
   fetch(key: CacheKey): Promise<any>;
   remove(key: CacheKey): Promise<void>;
 

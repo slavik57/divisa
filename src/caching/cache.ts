@@ -1,9 +1,9 @@
 import { KeyToObjectCache } from "./keyToObjectCache";
 import { isNullOrUndefined } from "../valueChekers/valueCheckers";
 import { CacheKey } from "./cacheKey";
-import { Resolver } from "../resolvers/resolver";
+import { WithinCacheResolver } from "../resolvers/withinCache/withinCacheResolver";
 import { CacheCollisionError } from "../errors/errors";
-import { Resolvers } from "../resolvers/resolvers";
+import { WithinCacheResolvers } from "../resolvers/withinCache/withinCacheResolvers";
 import { CachePartition } from "./cachePartition";
 import { NO_TYPE } from "./noType";
 import { Observable } from "rxjs/Observable";
@@ -22,7 +22,7 @@ export class Cache implements CachePartition {
     this.keyRemovedObservable = new Subject<CacheKey>();
   }
 
-  public async add(key: CacheKey, object: any, resolver: Resolver = Resolvers.ThrowErrorResolver): Promise<boolean> {
+  public async add(key: CacheKey, object: any, resolver: WithinCacheResolver = WithinCacheResolvers.ThrowErrorResolver): Promise<boolean> {
     try {
       await this._addToTypeSpecificCache(key, object);
 
@@ -136,7 +136,7 @@ export class Cache implements CachePartition {
     error: CacheCollisionError,
     key: CacheKey,
     object: any,
-    resolver: Resolver): Promise<boolean> {
+    resolver: WithinCacheResolver): Promise<boolean> {
     if (error instanceof CacheCollisionError && !!resolver) {
       return await resolver.resolve(this, key, object);
     } else {
