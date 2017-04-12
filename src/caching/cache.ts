@@ -54,6 +54,12 @@ export class Cache implements CachePartition {
   public async remove(key: string): Promise<void> {
     if (await this._keyToObjectCache.remove(key)) {
       this._keyRemoved.next(key);
+      return;
+    }
+
+    const keyPartition: CachePartition = this._keyToPartitionMap.get(key);
+    if (!isNullOrUndefined(keyPartition)) {
+      await keyPartition.remove(key);
     }
   }
 

@@ -13,7 +13,7 @@ import * as sizeof from 'object-sizeof';
 import { Subject } from "rxjs/Subject";
 
 describe('Cache', () => {
-  describe('add-fetch', () => {
+  describe('add-fetch-remove', () => {
     it('fetching should reject on empty cache', () => {
       const cache = new Cache();
       return expect(cache.fetch('not existing key')).to.eventually.be.rejectedWith(KeyNotFoundError);
@@ -130,6 +130,19 @@ describe('Cache', () => {
 
       return expect(cache.fetch(key)).to.eventually.rejected;
     });
+
+    it('remove key that exists in partition, should remove from partition', async () => {
+      const cache = new Cache();
+      const partition = new Cache();
+      await cache.addCachePartition(partition);
+
+      const key = 'some key';
+      await partition.add(key, {});
+
+      await cache.remove(key);
+
+      return expect(partition.fetch(key)).to.eventually.rejectedWith(KeyNotFoundError);
+    })
   });
 
   describe('getKeys', () => {
