@@ -44,7 +44,9 @@
     "webpack": "^2.3.3"
   },
   "dependencies": {
+    "@types/uuid": "^2.0.29",
     "object-sizeof": "^1.2.0",
-    "rxjs": "^5.3.0"
+    "rxjs": "^5.3.0",
+    "uuid": "^3.0.1"
   }
 }

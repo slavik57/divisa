@@ -1,4 +1,5 @@
 export interface CacheObjectInfo {
   sizeInBytes: number;
-  dateAdded: Date
+  dateAdded: Date;
+  keyId: string;
 }

@@ -4,7 +4,12 @@ import { CacheInfo } from "./cacheInfo";
 import * as sizeof from "object-sizeof";
 import { CacheObjectInfo } from "./cacheObjectInfo";
 
-interface CacheObject extends CacheObjectInfo {
+export interface ObjectInfo {
+  sizeInBytes: number;
+  dateAdded: Date;
+}
+
+interface CacheObject extends ObjectInfo {
   obj: any;
 }
 
@@ -63,7 +68,7 @@ export class KeyToObjectCache {
     });
   }
 
-  public async getObjectInfo(key: string): Promise<CacheObjectInfo> {
+  public async getObjectInfo(key: string): Promise<ObjectInfo> {
     const cacheObject: CacheObject = this.keyToObjectMap.get(key);
 
     if (isNullOrUndefined(cacheObject)) {

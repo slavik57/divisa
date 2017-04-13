@@ -11,6 +11,7 @@ import { BetweenCachesResolver } from "../resolvers/betweenCaches/betweenCachesR
 import { CacheInfo } from "./cacheInfo";
 import * as sizeof from 'object-sizeof';
 import { Subject } from "rxjs/Subject";
+import { CacheKey } from "./cacheKey";
 
 describe('Cache', () => {
   describe('add-fetch-remove', () => {
@@ -161,9 +162,10 @@ describe('Cache', () => {
 
       await cache.add(key, obj);
 
-      const keys = await cache.getKeys();
+      const keys: CacheKey[] = await cache.getKeys();
 
-      expect(keys).to.be.deep.equal([key]);
+      expect(keys).to.be.length(1);
+      expect(keys[0].key).to.be.equal(key);
     })
 
     it('add multiple objects, should return correct result', async () => {
@@ -178,7 +180,8 @@ describe('Cache', () => {
       await cache.add(key3, {});
       await cache.add(key4, {});
 
-      const keys = await cache.getKeys();
+      const cacheKeys = await cache.getKeys();
+      const keys = cacheKeys.map(_ => _.key);
 
       expect(keys).to.be.deep.equal([key1, key2, key3, key4]);
     })
@@ -205,11 +208,46 @@ describe('Cache', () => {
       await cache.addCachePartition(partition2);
       await cache.addCachePartition(partition3);
 
-      const keys = await cache.getKeys();
+      const cacheKeys = await cache.getKeys();
+      const keys = cacheKeys.map(_ => _.key);
 
       expect(keys).to.be.length(4);
       expect(keys).to.contain(key1);
       expect(keys).to.contain(key2);
+      expect(keys).to.contain(key3);
+      expect(keys).to.contain(key4);
+    });
+
+    it('after removing from partitions should return correct keys from all partitions', async () => {
+
+      const key1 = 'key1';
+      const key2 = 'key2';
+      const key3 = 'key3';
+      const key4 = 'key4';
+
+      const partition1 = new Cache();
+      const partition2 = new Cache();
+      const partition3 = new Cache();
+
+      await partition1.add(key1, {});
+      await partition2.add(key2, {});
+      await partition3.add(key3, {});
+
+      const cache = new Cache();
+      await cache.add(key4, {});
+
+      await cache.addCachePartition(partition1);
+      await cache.addCachePartition(partition2);
+      await cache.addCachePartition(partition3);
+
+      await partition2.remove(key2);
+
+      const cacheKeys = await cache.getKeys();
+      const keys = cacheKeys.map(_ => _.key);
+
+      expect(keys).to.be.length(3);
+      expect(keys).to.contain(key1);
+      expect(keys).to.not.contain(key2);
       expect(keys).to.contain(key3);
       expect(keys).to.contain(key4);
     });
@@ -227,7 +265,7 @@ describe('Cache', () => {
 
       expect(spyCallback.callCount).to.be.equal(1);
       expect(spyCallback.args[0]).to.be.length(1);
-      expect(spyCallback.args[0][0]).to.be.equal(key);
+      expect(spyCallback.args[0][0].key).to.be.equal(key);
     });
 
     it('adding with existing key should not raise keyAdded', async () => {
@@ -288,15 +326,18 @@ describe('Cache', () => {
       cache.keyAdded.subscribe(keyAddedSpy);
 
       await partition.add(key, {});
+      const info = await partition.getObjectInfo(key);
 
       expect(keyAddedSpy.callCount).to.be.equal(1);
-      expect(keyAddedSpy.args[0]).to.be.deep.equal([key]);
+      expect(keyAddedSpy.args[0]).to.be.length(1);
+      expect(keyAddedSpy.args[0][0].key).to.be.equal(key);
+      expect(keyAddedSpy.args[0][0].keyId).to.be.equal(info.keyId);
     });
 
     it('keyAdded raised twice from the partition should raise keyAdded only once', async () => {
       const key = 'some key';
       const partition = new Cache();
-      const partitionKeyAdded = new Subject<string>();
+      const partitionKeyAdded = new Subject<CacheKey>();
       stub(partition, 'keyAdded', { get: () => partitionKeyAdded });
 
       const cache = new Cache();
@@ -305,11 +346,12 @@ describe('Cache', () => {
       const keyAddedSpy = spy();
       cache.keyAdded.subscribe(keyAddedSpy);
 
-      partitionKeyAdded.next(key);
-      partitionKeyAdded.next(key);
+      partitionKeyAdded.next(new CacheKey(key));
+      partitionKeyAdded.next(new CacheKey(key));
 
       expect(keyAddedSpy.callCount).to.be.equal(1);
-      expect(keyAddedSpy.args[0]).to.be.deep.equal([key]);
+      expect(keyAddedSpy.args[0]).to.be.length(1);
+      expect(keyAddedSpy.args[0][0].key).to.be.equal(key);
     });
   });
 
@@ -353,7 +395,7 @@ describe('Cache', () => {
 
       expect(spyCallback.callCount).to.be.equal(1);
       expect(spyCallback.args[0]).to.be.length(1);
-      expect(spyCallback.args[0][0]).to.be.equal(key);
+      expect(spyCallback.args[0][0].key).to.be.equal(key);
     });
 
     it('adding with existing key with KeepNewResolver should raise keyRemoved', async () => {
@@ -417,13 +459,14 @@ describe('Cache', () => {
       await partition.remove(key);
 
       expect(keyRemovedSpy.callCount).to.be.equal(1);
-      expect(keyRemovedSpy.args[0]).to.be.deep.equal([key]);
+      expect(keyRemovedSpy.args[0]).to.be.length(1);
+      expect(keyRemovedSpy.args[0][0].key).to.be.equal(key);
     });
 
     it('keyRemoved raised twice from the partition should raise keyRemoved only once', async () => {
       const key = 'some key';
       const partition = new Cache();
-      const partitionKeyRemoved = new Subject<string>();
+      const partitionKeyRemoved = new Subject<CacheKey>();
       stub(partition, 'keyRemoved', { get: () => partitionKeyRemoved });
 
       const cache = new Cache();
@@ -433,11 +476,12 @@ describe('Cache', () => {
       const keyRemovedSpy = spy();
       cache.keyRemoved.subscribe(keyRemovedSpy);
 
-      partitionKeyRemoved.next(key);
-      partitionKeyRemoved.next(key);
+      partitionKeyRemoved.next(new CacheKey(key));
+      partitionKeyRemoved.next(new CacheKey(key));
 
       expect(keyRemovedSpy.callCount).to.be.equal(1);
-      expect(keyRemovedSpy.args[0]).to.be.deep.equal([key]);
+      expect(keyRemovedSpy.args[0]).to.be.length(1);
+      expect(keyRemovedSpy.args[0][0].key).to.be.equal(key);
     });
 
     it('keyRemoved raised from different partition should not raise keyRemoved', async () => {
@@ -446,7 +490,7 @@ describe('Cache', () => {
       await paartition.add(key, {});
 
       const otherPartition = new Cache();
-      const partitionKeyRemoved = new Subject<string>();
+      const partitionKeyRemoved = new Subject<CacheKey>();
       stub(otherPartition, 'keyRemoved', { get: () => partitionKeyRemoved });
 
       const cache = new Cache();
@@ -456,10 +500,31 @@ describe('Cache', () => {
       const keyRemovedSpy = spy();
       cache.keyRemoved.subscribe(keyRemovedSpy);
 
-      partitionKeyRemoved.next(key);
+      partitionKeyRemoved.next(new CacheKey(key));
 
       expect(keyRemovedSpy.callCount).to.be.equal(0);
     });
+
+    it('removing key should raise key removed with same cache key', async () => {
+      const cache = new Cache();
+
+      const key = 'some key';
+
+      const keyAddedSpy: SinonSpy = spy();
+      const keyRemovedSpy: SinonSpy = spy();
+      cache.keyAdded.subscribe(keyAddedSpy);
+      cache.keyRemoved.subscribe(keyRemovedSpy);
+
+      await cache.add(key, {});
+      expect(keyAddedSpy.callCount).to.be.equal(1);
+      const addedCacheKey: CacheKey = keyAddedSpy.args[0][0];
+
+      await cache.remove(key);
+      expect(keyRemovedSpy.callCount).to.be.equal(1);
+      const removedCacheKey: CacheKey = keyRemovedSpy.args[0][0];
+
+      expect(removedCacheKey).to.deep.equal(addedCacheKey);
+    })
   });
 
   describe('getInfo', () => {
@@ -555,6 +620,23 @@ describe('Cache', () => {
       expect(info.sizeInBytes).to.be.equal(sizeof(obj));
       expect(info.dateAdded.valueOf()).to.be.least(beforeAdd.valueOf());
       expect(info.dateAdded.valueOf()).to.be.most(afterAdd.valueOf());
+    });
+
+    it('on existing key should return correct key id', async () => {
+      const cache = new Cache();
+
+      const key = 'some key';
+      const obj = { aad: 'safdasdf', saf: 123 };
+
+      const keyAddedSpy = spy();
+      cache.keyAdded.subscribe(keyAddedSpy);
+      await cache.add(key, obj);
+
+      const cacheKey: CacheKey = keyAddedSpy.args[0][0];
+
+      const info = await cache.getObjectInfo(key);
+
+      expect(info.keyId).to.be.equal(cacheKey.keyId);
     });
 
     it('on existing local key should not getObjectInfo from partition', async () => {
@@ -769,7 +851,7 @@ describe('Cache', () => {
     });
 
     it('key added raised multiple times in a row for same key from the partition, should not fail', async () => {
-      const keyAdded = new Subject<string>();
+      const keyAdded = new Subject<CacheKey>();
       stub(partition, 'keyAdded', { get: () => keyAdded });
 
       await cache.addCachePartition(partition, resolver);
@@ -778,8 +860,8 @@ describe('Cache', () => {
       stub(partition, 'fetch', () => Promise.resolve(obj));
 
       const key = 'some key';
-      keyAdded.next(key);
-      keyAdded.next(key);
+      keyAdded.next(new CacheKey(key));
+      keyAdded.next(new CacheKey(key));
 
       const result = await cache.fetch(key);
       expect(result).to.be.equal(obj);
@@ -787,7 +869,7 @@ describe('Cache', () => {
 
 
     it('key removed raised multiple times in a row for same key from the partition, should not fail', async () => {
-      const keyRemoved = new Subject<string>();
+      const keyRemoved = new Subject<CacheKey>();
       stub(partition, 'keyRemoved', { get: () => keyRemoved });
 
       const key = 'some key';
@@ -795,8 +877,8 @@ describe('Cache', () => {
       await partition.add(key, obj);
       await cache.addCachePartition(partition, resolver);
 
-      keyRemoved.next(key);
-      keyRemoved.next(key);
+      keyRemoved.next(new CacheKey(key));
+      keyRemoved.next(new CacheKey(key));
 
       return expect(cache.fetch(key)).to.eventually.rejected;
     });
@@ -804,13 +886,13 @@ describe('Cache', () => {
     it('fetching from partition fails for some unknown reason, second time should fetch from partition', async () => {
       const key = 'some key';
 
-      const keyAdded = new Subject<string>();
+      const keyAdded = new Subject<CacheKey>();
       stub(partition, 'keyAdded', { get: () => keyAdded });
 
       const fetchSpy = stub(partition, 'fetch', () => { throw 'some error' });
 
       await cache.addCachePartition(partition, resolver);
-      keyAdded.next(key);
+      keyAdded.next(new CacheKey(key));
 
       try {
         await cache.fetch(key);
@@ -828,14 +910,14 @@ describe('Cache', () => {
     });
 
     it('fetching from partition fails, second time should not fetch from partition', async () => {
-      const keyAdded = new Subject<string>();
+      const keyAdded = new Subject<CacheKey>();
       stub(partition, 'keyAdded', { get: () => keyAdded });
 
       const fetchSpy = spy(partition, 'fetch');
       await cache.addCachePartition(partition, resolver);
 
       const key = 'some key';
-      keyAdded.next(key);
+      keyAdded.next(new CacheKey(key));
 
       try {
         await cache.fetch(key);
