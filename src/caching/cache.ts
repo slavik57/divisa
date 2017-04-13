@@ -10,6 +10,7 @@ import { Subject } from "rxjs/Subject";
 import { CacheInfo } from "./cacheInfo";
 import { CacheObjectInfo } from "./cacheObjectInfo";
 import { CacheKey } from "./cacheKey";
+import * as uuid from 'uuid';
 
 export class Cache implements CachePartition {
   private _keyToObjectCache: KeyToObjectCache;
@@ -20,7 +21,11 @@ export class Cache implements CachePartition {
   private _keyAdded: Subject<CacheKey>;
   private _keyRemoved: Subject<CacheKey>;
 
+  public id: string;
+
   constructor() {
+    this.id = uuid.v4();
+
     this._keyToObjectCache = new KeyToObjectCache();
     this._keyToCacheKeyMap = new Map<string, CacheKey>();
     this._partitions = [];
@@ -34,7 +39,7 @@ export class Cache implements CachePartition {
     try {
       await this._keyToObjectCache.add(key, object);
 
-      const cacheKey = new CacheKey(key);
+      const cacheKey = new CacheKey(key, this.id);
       this._keyToCacheKeyMap.set(key, cacheKey);
       this._keyAdded.next(cacheKey);
 
@@ -81,8 +86,12 @@ export class Cache implements CachePartition {
     const partitionsKeys: CacheKey[] =
       Array.from(this._keyToPartitionCacheKeyMap.values());
 
+    const localKeyIds: string[] = localKeys.map(_ => _.keyId);
+    const partitionsKeysWithoutLocalKeys: CacheKey[] =
+      partitionsKeys.filter(key => localKeyIds.indexOf(key.keyId) < 0);
+
     result.push.apply(result, localKeys);
-    result.push.apply(result, partitionsKeys);
+    result.push.apply(result, partitionsKeysWithoutLocalKeys);
 
     return result;
   }
@@ -121,6 +130,8 @@ export class Cache implements CachePartition {
     partition.keyAdded.subscribe(newKey => this._onKeyAddedToPartition(newKey, partition));
     partition.keyRemoved.subscribe(oldKey => this._onKeyRemovedFromPartition(oldKey, partition));
     await this._mapKeysToPartitions(partition);
+
+    await partition.addCachePartition(this, conflictResolver);
   }
 
   public get keyAdded(): Observable<CacheKey> {
@@ -156,6 +167,10 @@ export class Cache implements CachePartition {
   }
 
   private _onKeyAddedToPartition(cacheKey: CacheKey, partition: CachePartition): void {
+    if (cacheKey.keyId === this.id) {
+      return;
+    }
+
     if (this._keyToPartitionMap.has(cacheKey.key)) {
       return;
     }
@@ -167,6 +182,10 @@ export class Cache implements CachePartition {
   }
 
   private _onKeyRemovedFromPartition(cacheKey: CacheKey, partition: CachePartition): void {
+    if (cacheKey.keyId === this.id) {
+      return;
+    }
+
     const partitionForKey = this._keyToPartitionMap.get(cacheKey.key);
 
     if (isNullOrUndefined(partitionForKey) ||
