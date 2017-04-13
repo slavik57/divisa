@@ -96,7 +96,7 @@ export class Cache implements CachePartition {
     }
 
     if (this._partitions.indexOf(partition) >= 0) {
-      throw 'The partition already exists';
+      return;
     }
 
     this._partitions.push(partition);

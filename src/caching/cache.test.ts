@@ -628,9 +628,9 @@ describe('Cache', () => {
       return expect(cache.addCachePartition(cache, resolver)).to.eventually.rejected;
     });
 
-    it('adding same partition to the cache should fail', async () => {
+    it('adding same partition to the cache should not fail', async () => {
       await cache.addCachePartition(partition, resolver);
-      return expect(cache.addCachePartition(partition, resolver)).to.eventually.rejected;
+      return expect(cache.addCachePartition(partition, resolver)).to.eventually.fulfilled;
     });
 
     it('fetching by not existing in main cache and partition should reject', async () => {
